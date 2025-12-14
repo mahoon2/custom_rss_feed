@@ -1,12 +1,11 @@
-import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from os import getenv
 from pathlib import Path
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 from urllib.parse import urljoin
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from curl_cffi import requests
 from rfeed import Feed, Guid, Item
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
@@ -92,7 +91,7 @@ def fetch_html(url: str) -> str:
     """Retrieve the HTML body for a provided URL."""
     response = requests.get(
         url,
-        timeout=15,
+        timeout=30,
         allow_redirects=True,
         impersonate="safari15_5",
         headers=TRUST_HEADERS,
@@ -101,126 +100,145 @@ def fetch_html(url: str) -> str:
     return response.text
 
 
-def extract_json_ld(html: str) -> List[dict]:
-    """Collect JSON-LD objects embedded in the page."""
-    soup = BeautifulSoup(html, "html.parser")
-    scripts = soup.select("script[type='application/ld+json']")
-    collected: List[dict] = []
-    for script in scripts:
-        if not script.string:
-            continue
-        try:
-            payload = json.loads(script.string.strip())
-        except json.JSONDecodeError:
-            continue
-        if isinstance(payload, dict):
-            graph = payload.get("@graph")
-            if isinstance(graph, list):
-                collected.extend(graph)
-            main_entity = payload.get("mainEntity")
-            if isinstance(main_entity, list):
-                collected.extend(main_entity)
-            elif isinstance(main_entity, dict):
-                collected.append(main_entity)
-            collected.append(payload)
-        elif isinstance(payload, list):
-            collected.extend(payload)
-    return collected
-
-
-def normalize_field(value: Any) -> str:
-    """Serialize nested structures into a single string."""
-    if isinstance(value, dict):
-        return " ".join(normalize_field(subvalue) for subvalue in value.values())
-    if isinstance(value, list):
-        return " ".join(normalize_field(entry) for entry in value)
-    if value is None:
-        return ""
-    return str(value)
-
-
-def entry_text(entry: dict) -> str:
-    """Build a lowercase token stream for filtering heuristics."""
-    fields = (
-        "@type",
-        "articleSection",
-        "articleType",
-        "headline",
-        "name",
-        "genre",
-        "keywords",
-    )
-    text_parts = (normalize_field(entry.get(field)) for field in fields)
-    return " ".join(filter(None, text_parts)).lower()
-
-
-def matches_keywords(text: str, include: Tuple[str, ...], exclude: Tuple[str, ...]) -> bool:
-    """Decide whether the candidate text passes the include/exclude lists."""
-    has_allowed = not include or any(term in text for term in include)
-    has_banned = any(term in text for term in exclude)
-    return has_allowed and not has_banned
-
-
-def best_link(entry: dict, base_url: str) -> Optional[str]:
-    """Extract the most reliable URL from the JSON-LD entry."""
-    candidates = ("url", "mainEntityOfPage", "sameAs", "identifier")
-    for key in candidates:
-        candidate = entry.get(key)
-        if isinstance(candidate, dict):
-            candidate = candidate.get("@id")
-        if isinstance(candidate, list):
-            candidate = candidate[0]
-        if not candidate:
-            continue
-        url = str(candidate).strip()
-        if url:
-            return urljoin(base_url, url)
-    return None
-
-
 def parse_date(value: Optional[str]) -> Optional[datetime]:
-    """Convert ISO-formatted strings into datetime objects."""
+    """Convert assorted date representations into timezone-aware datetime objects."""
     if not value:
         return None
-    normalized = value.strip().replace("Z", "+00:00")
+    cleaned = value.strip()
+    if ":" in cleaned and not cleaned.startswith("20"):
+        parts = cleaned.split(":", 1)
+        cleaned = parts[1].strip() if len(parts) > 1 else parts[0].strip()
+    iso_candidate = cleaned.replace("Z", "+00:00")
     try:
-        return datetime.fromisoformat(normalized)
+        parsed = datetime.fromisoformat(iso_candidate)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
     except ValueError:
-        for fmt in ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"):
+        formats = ("%B %d, %Y", "%d %b %Y", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S")
+        for fmt in formats:
             try:
-                return datetime.strptime(normalized, fmt)
+                return datetime.strptime(cleaned, fmt).replace(tzinfo=timezone.utc)
             except ValueError:
                 continue
     return None
 
 
-def to_article(entry: dict, config: JournalConfig) -> Optional[Article]:
-    """Transform a JSON-LD entry into an Article when it meets filters."""
-    text = entry_text(entry)
-    if not matches_keywords(text, config.include_terms, config.exclude_terms):
-        return None
-    title = normalize_field(entry.get("headline") or entry.get("name") or "")
-    title = title.strip()
-    if not title:
-        return None
-    link = best_link(entry, config.base_url)
-    if not link:
-        return None
-    summary = normalize_field(entry.get("description") or entry.get("abstract") or "")
-    published = parse_date(entry.get("datePublished"))
-    return Article(
-        title=title,
-        link=link,
-        summary=summary.strip(),
-        published=published,
-        source=config.name,
-    )
+def text_or_empty(tag: Optional[Tag]) -> str:
+    """Return the stripped text of a tag or an empty string."""
+    return tag.get_text(" ", strip=True) if tag else ""
+
+
+def parse_nature(html: str, config: JournalConfig) -> List[Article]:
+    """Extract article data from the Nature research page."""
+    soup = BeautifulSoup(html, "html.parser")
+    cards = soup.select("article.c-card")
+    articles: List[Article] = []
+    for card in cards:
+        title_tag = card.select_one("h3.c-card__title a")
+        if not title_tag:
+            continue
+        summary_tag = card.select_one('div[data-test="article-description"] p')
+        time_tag = card.select_one('time[itemprop="datePublished"]')
+        published = (
+            parse_date(time_tag.get("datetime"))
+            if time_tag and time_tag.get("datetime")
+            else parse_date(text_or_empty(time_tag))
+        )
+        articles.append(
+            Article(
+                title=text_or_empty(title_tag),
+                link=urljoin(config.base_url, title_tag.get("href", "")),
+                summary=text_or_empty(summary_tag),
+                published=published,
+                source=config.name,
+            )
+        )
+    return articles
+
+
+def parse_science(html: str, config: JournalConfig) -> List[Article]:
+    """Extract article data from the Science research page."""
+    soup = BeautifulSoup(html, "html.parser")
+    containers = soup.select("div.card-content, article.card-do")
+    articles: List[Article] = []
+
+    def choose_title(container: Tag) -> Optional[Tag]:
+        """Return the most likely title link."""
+        return container.select_one("h3.article-title a") or container.select_one(
+            "div.card__title a"
+        )
+
+    for container in containers:
+        title_element = choose_title(container)
+        if not title_element:
+            continue
+        summary_source = container.select_one("ul.card-contribs")
+        time_element = container.select_one("span.card-meta__item time")
+        published = (
+            parse_date(time_element.get("datetime"))
+            if time_element and time_element.get("datetime")
+            else parse_date(text_or_empty(time_element))
+        )
+        articles.append(
+            Article(
+                title=text_or_empty(title_element),
+                link=urljoin(config.base_url, title_element.get("href", "")),
+                summary=text_or_empty(summary_source),
+                published=published,
+                source=config.name,
+            )
+        )
+    return articles
+
+
+def parse_cell(html: str, config: JournalConfig) -> List[Article]:
+    """Extract article data from the Cell new articles page."""
+    soup = BeautifulSoup(html, "html.parser")
+    items = soup.select("div.toc__item")
+    articles: List[Article] = []
+    for item in items:
+        title_tag = item.select_one("h3.toc__item__title a")
+        if not title_tag:
+            continue
+        summary_tag = item.select_one("div.toc__item__brief")
+        date_tag = item.select_one("div.toc__item__date")
+        published = parse_date(text_or_empty(date_tag))
+        articles.append(
+            Article(
+                title=text_or_empty(title_tag),
+                link=urljoin(config.base_url, title_tag.get("href", "")),
+                summary=text_or_empty(summary_tag),
+                published=published,
+                source=config.name,
+            )
+        )
+    return articles
+
+
+PARSER_MAP = {
+    "Cell": parse_cell,
+    "Nature": parse_nature,
+    "Science": parse_science,
+}
 
 
 def parse_journal(html: str, config: JournalConfig) -> List[Article]:
-    """Parse the JSON-LD footprint for a specific journal feed."""
-    entries = extract_json_ld(html)
-    return [article for article in (to_article(entry, config) for entry in entries) if article]
+    """Parse the journal page using the CSS-based parser for that journal."""
+    parser = PARSER_MAP.get(config.name)
+    if not parser:
+        return []
+    candidates = parser(html, config)
+    print(f"Extracted {len(candidates)} JSON-LD entries.")
+    filtered = [article for article in candidates if article.title and article.link]
+    print(f"Filtered down to {len(filtered)} valid articles.")
+    return filtered
+
+
+def ensure_timezone(value: Optional[datetime]) -> datetime:
+    """Normalize datetimes to UTC so they can be compared safely."""
+    fallback = datetime(1970, 1, 1, tzinfo=timezone.utc)
+    if not value:
+        return fallback
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
 def build_feed(articles: Iterable[Article], channel_link: str) -> str:
@@ -228,7 +246,7 @@ def build_feed(articles: Iterable[Article], channel_link: str) -> str:
     unique_links = set()
     sorted_articles = sorted(
         articles,
-        key=lambda entry: entry.published or datetime(1970, 1, 1, tzinfo=timezone.utc),
+        key=lambda entry: ensure_timezone(entry.published),
         reverse=True,
     )
     items: List[Item] = []
@@ -241,7 +259,7 @@ def build_feed(articles: Iterable[Article], channel_link: str) -> str:
                 title=f"{article.source}: {article.title}",
                 link=article.link,
                 description=article.summary,
-                guid=Guid(article.link, permalink=True),
+                guid=Guid(article.link, isPermaLink=True),
                 pubDate=article.published,
             )
         )
@@ -258,11 +276,11 @@ def build_feed(articles: Iterable[Article], channel_link: str) -> str:
 
 def main() -> None:
     """Generate feed.xml by scraping configured journals."""
-    articles = [
-        article
-        for config in JOURNAL_CONFIGS
-        for article in parse_journal(fetch_html(config.url), config)
-    ]
+    articles: List[Article] = []
+    for config in JOURNAL_CONFIGS:
+        print(f"Fetching {config.name}...")
+        html = fetch_html(config.url)
+        articles.extend(parse_journal(html, config))
     feed_content = build_feed(articles, get_feed_link())
     Path("feed.xml").write_text(feed_content, encoding="utf-8")
 
