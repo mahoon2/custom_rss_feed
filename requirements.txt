@@ -1,3 +1,4 @@
 beautifulsoup4>=4.12
 curl_cffi>=0.9
 rfeed>=0.6
+tenacity>=8.2
