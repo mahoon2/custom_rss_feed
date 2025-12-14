@@ -150,33 +150,35 @@ def parse_nature(html: str, config: JournalConfig) -> List[Article]:
 
 
 def parse_science(html: str, config: JournalConfig) -> List[Article]:
-    """Extract article data from the Science research page."""
+    """Extract Science research article data using explicit Research labels."""
     soup = BeautifulSoup(html, "html.parser")
-    containers = soup.select("div.card-content, article.card-do")
+    cards = soup.select("div.card")
     articles: List[Article] = []
+    valid_labels = ("research article", "research resource", "short article")
 
-    def choose_title(container: Tag) -> Optional[Tag]:
-        """Return the most likely title link."""
-        return container.select_one("h3.article-title a") or container.select_one(
-            "div.card__title a"
-        )
-
-    for container in containers:
-        title_element = choose_title(container)
-        if not title_element:
+    for card in cards:
+        label_tag = card.select_one("span.overline")
+        if not label_tag:
             continue
-        summary_source = container.select_one("ul.card-contribs")
-        time_element = container.select_one("span.card-meta__item time")
+        label_text = text_or_empty(label_tag).lower()
+        if not any(term in label_text for term in valid_labels):
+            continue
+
+        title_tag = card.select_one("h2.article-title a")
+        if not title_tag:
+            continue
+        summary_tag = card.select_one("ul.card-contribs")
+        time_tag = card.select_one("div.card-meta time")
         published = (
-            parse_date(time_element.get("datetime"))
-            if time_element and time_element.get("datetime")
-            else parse_date(text_or_empty(time_element))
+            parse_date(time_tag.get("datetime"))
+            if time_tag and time_tag.get("datetime")
+            else parse_date(text_or_empty(time_tag))
         )
         articles.append(
             Article(
-                title=text_or_empty(title_element),
-                link=urljoin(config.base_url, title_element.get("href", "")),
-                summary=text_or_empty(summary_source),
+                title=text_or_empty(title_tag),
+                link=urljoin(config.base_url, title_tag.get("href", "")),
+                summary=text_or_empty(summary_tag),
                 published=published,
                 source=config.name,
             )
