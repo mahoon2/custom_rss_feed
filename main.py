@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from os import getenv
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 from urllib.parse import urljoin
@@ -10,17 +9,12 @@ from curl_cffi import requests
 from rfeed import Feed, Guid, Item
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-DEFAULT_FEED_LINK = "https://github.com/qbio/mahoon2"
+FEED_LINK = "https://mahoon2.github.io/custom_rss_feed/CNSfeed.xml"
 
 TRUST_HEADERS = {
     "Referer": "https://www.google.com/",
     "Accept-Language": "en-US,en;q=0.9",
 }
-
-
-def get_feed_link() -> str:
-    """Return the configured channel link for the RSS feed."""
-    return getenv("FEED_LINK", DEFAULT_FEED_LINK)
 
 
 @dataclass(frozen=True)
@@ -275,14 +269,14 @@ def build_feed(articles: Iterable[Article], channel_link: str) -> str:
 
 
 def main() -> None:
-    """Generate feed.xml by scraping configured journals."""
+    """Generate CNSfeed.xml by scraping configured journals."""
     articles: List[Article] = []
     for config in JOURNAL_CONFIGS:
         print(f"Fetching {config.name}...")
         html = fetch_html(config.url)
         articles.extend(parse_journal(html, config))
-    feed_content = build_feed(articles, get_feed_link())
-    Path("feed.xml").write_text(feed_content, encoding="utf-8")
+    feed_content = build_feed(articles, FEED_LINK)
+    Path("CNSfeed.xml").write_text(feed_content, encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -16,11 +16,11 @@ if ! python main.py; then
   exit 1
 fi
 
-echo "Staging feed.xml..."
-git add feed.xml
+echo "Staging CNSfeed.xml..."
+git add CNSfeed.xml
 
 if git diff --cached --quiet; then
-  echo "No changes detected in feed.xml; nothing to commit."
+  echo "No changes detected in CNSfeed.xml; nothing to commit."
   exit 0
 fi
 
