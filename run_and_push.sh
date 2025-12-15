@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd "$(dirname "$0")"
+
 VENV_PATH=".venv/bin/activate"
 
 if [[ -f "$VENV_PATH" ]]; then
