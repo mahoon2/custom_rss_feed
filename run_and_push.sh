@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export GIT_SSH_COMMAND="ssh -i ~/.ssh/bot_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+
 cd "$(dirname "$0")"
 
 VENV_PATH=".venv/bin/activate"
