@@ -264,7 +264,6 @@ def build_feed(articles: Iterable[Article], channel_link: str) -> str:
         link=channel_link,
         description="Aggregated research articles from Cell, Nature, and Science.",
         language="en-US",
-        lastBuildDate=datetime.now(timezone.utc),
         items=items,
     )
     return feed.rss()
