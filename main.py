@@ -10,8 +10,6 @@ from curl_cffi import requests
 from rfeed import Feed, Guid, Item
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-FEED_LINK = "https://mahoon2.github.io/custom_rss_feed/CNSfeed.xml"
-
 TRUST_HEADERS = {
     "Referer": "https://www.google.com/",
     "Accept-Language": "en-US,en;q=0.9",
@@ -408,7 +406,7 @@ def ensure_timezone(value: Optional[datetime]) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
-def build_feed(articles: Iterable[Article], channel_link: str) -> str:
+def build_feed(articles: Iterable[Article], feed_config: FeedConfig) -> str:
     """Serialize the list of Article objects into RSS 2.0 XML."""
     unique_links = set()
     sorted_articles = sorted(
@@ -431,9 +429,9 @@ def build_feed(articles: Iterable[Article], channel_link: str) -> str:
             )
         )
     feed = Feed(
-        title="Custom Biological Research Feed",
-        link=channel_link,
-        description="Aggregated research articles from Cell, Nature, and Science.",
+        title=feed_config.title,
+        link=feed_config.link,
+        description=feed_config.description,
         language="en-US",
         items=items,
     )
@@ -441,14 +439,20 @@ def build_feed(articles: Iterable[Article], channel_link: str) -> str:
 
 
 def main() -> None:
-    """Generate CNSfeed.xml by scraping configured journals."""
-    articles: List[Article] = []
+    """Generate RSS feed XML files by scraping configured journals."""
+    articles_by_journal: dict[str, List[Article]] = {}
     for config in JOURNAL_CONFIGS:
         print(f"Fetching {config.name}...")
         html = fetch_html(config.url)
-        articles.extend(parse_journal(html, config))
-    feed_content = build_feed(articles, FEED_LINK)
-    Path("CNSfeed.xml").write_text(feed_content, encoding="utf-8")
+        articles_by_journal[config.name] = parse_journal(html, config)
+
+    for feed_config in FEED_CONFIGS:
+        articles: List[Article] = []
+        for journal_name in feed_config.journal_names:
+            articles.extend(articles_by_journal.get(journal_name, []))
+        feed_content = build_feed(articles, feed_config)
+        Path(feed_config.output_file).write_text(feed_content, encoding="utf-8")
+        print(f"Wrote {feed_config.output_file} ({len(articles)} articles).")
 
 
 if __name__ == "__main__":
