@@ -28,6 +28,15 @@ class Article:
 
 
 @dataclass(frozen=True)
+class FeedConfig:
+    title: str
+    description: str
+    output_file: str
+    link: str
+    journal_names: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class JournalConfig:
     name: str
     url: str
@@ -113,6 +122,35 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://genome.cshlp.org",
         include_terms=("research",),
         exclude_terms=(),
+    ),
+)
+
+FEED_CONFIGS: Tuple[FeedConfig, ...] = (
+    FeedConfig(
+        title="CNS Feed",
+        description="Aggregated research articles from Cell, Nature, and Science.",
+        output_file="CNSfeed.xml",
+        link="https://mahoon2.github.io/custom_rss_feed/CNSfeed.xml",
+        journal_names=("Cell", "Nature", "Science"),
+    ),
+    FeedConfig(
+        title="Molecular & Cell Biology Feed",
+        description="Aggregated research articles from Nature Cell Biology, Genome Biology, Genome Research, and Molecular Cell.",
+        output_file="mol_cell_bio_feed.xml",
+        link="https://mahoon2.github.io/custom_rss_feed/mol_cell_bio_feed.xml",
+        journal_names=(
+            "Nature Cell Biology",
+            "Genome Biology",
+            "Genome Research",
+            "Molecular Cell",
+        ),
+    ),
+    FeedConfig(
+        title="Methodology Feed",
+        description="Aggregated research articles from Nature Biotechnology and Nature Methods.",
+        output_file="methodology_feed.xml",
+        link="https://mahoon2.github.io/custom_rss_feed/methodology_feed.xml",
+        journal_names=("Nature Biotechnology", "Nature Methods"),
     ),
 )
 
