@@ -20,8 +20,8 @@ if ! python main.py; then
   exit 1
 fi
 
-echo "Staging CNSfeed.xml..."
-git add CNSfeed.xml
+echo "Staging feed files..."
+git add CNSfeed.xml mol_cell_bio_feed.xml methodology_feed.xml
 
 if git diff --cached --quiet; then
   echo "No changes detected in CNSfeed.xml; nothing to commit."
