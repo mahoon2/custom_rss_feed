@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,6 +65,55 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         include_terms=("research article", "research"),
         exclude_terms=("perspective", "books", "policy forum", "letter", "news"),
     ),
+    JournalConfig(
+        name="Molecular Cell",
+        url="https://www.cell.com/molecular-cell/newarticles",
+        base_url="https://www.cell.com",
+        include_terms=("research article", "article"),
+        exclude_terms=(
+            "news",
+            "editorial",
+            "briefing",
+            "ahead of print",
+            "perspective",
+            "pre-proof",
+        ),
+    ),
+    JournalConfig(
+        name="Nature Cell Biology",
+        url="https://www.nature.com/ncb/research-articles",
+        base_url="https://www.nature.com",
+        include_terms=("research article", "research"),
+        exclude_terms=("news & views",),
+    ),
+    JournalConfig(
+        name="Nature Biotechnology",
+        url="https://www.nature.com/nbt/research-articles",
+        base_url="https://www.nature.com",
+        include_terms=("research article", "research"),
+        exclude_terms=("news & views",),
+    ),
+    JournalConfig(
+        name="Nature Methods",
+        url="https://www.nature.com/nmeth/research-articles",
+        base_url="https://www.nature.com",
+        include_terms=("research article", "research"),
+        exclude_terms=("news & views",),
+    ),
+    JournalConfig(
+        name="Genome Biology",
+        url="https://genomebiology.biomedcentral.com/articles",
+        base_url="https://genomebiology.biomedcentral.com",
+        include_terms=("research",),
+        exclude_terms=(),
+    ),
+    JournalConfig(
+        name="Genome Research",
+        url="https://genome.cshlp.org/content/current",
+        base_url="https://genome.cshlp.org",
+        include_terms=("research",),
+        exclude_terms=(),
+    ),
 )
 
 
@@ -107,7 +157,14 @@ def parse_date(value: Optional[str]) -> Optional[datetime]:
         parsed = datetime.fromisoformat(iso_candidate)
         return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
     except ValueError:
-        formats = ("%B %d, %Y", "%d %b %Y", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S")
+        formats = (
+            "%B %d, %Y",
+            "%d %b %Y",
+            "%d %B %Y",
+            "%B %Y",
+            "%Y-%m-%d",
+            "%Y-%m-%dT%H:%M:%S",
+        )
         for fmt in formats:
             try:
                 return datetime.strptime(cleaned, fmt).replace(tzinfo=timezone.utc)
@@ -210,10 +267,86 @@ def parse_cell(html: str, config: JournalConfig) -> List[Article]:
     return articles
 
 
+def parse_genome_biology(html: str, config: JournalConfig) -> List[Article]:
+    """Extract research article data from the Genome Biology articles page."""
+    soup = BeautifulSoup(html, "html.parser")
+    listing = soup.find(attrs={"data-test": "article-listing"})
+    if not listing:
+        return []
+    date_pattern = re.compile(r"^\d{1,2} \w+ \d{4}$")
+    articles: List[Article] = []
+    for card in listing.find_all("article", class_="app-card-open"):
+        type_tag = card.find("span", class_="c-meta__type")
+        if not type_tag or type_tag.get_text(strip=True).lower() != "research":
+            continue
+        heading = card.find("h2", class_="app-card-open__heading")
+        if not heading:
+            continue
+        link_tag = heading.find("a")
+        if not link_tag:
+            continue
+        date_str: Optional[str] = None
+        for item in card.find_all("span", class_="c-meta__item"):
+            text = item.get_text(strip=True)
+            if date_pattern.match(text):
+                date_str = text
+                break
+        articles.append(
+            Article(
+                title=text_or_empty(link_tag),
+                link=urljoin(config.base_url, link_tag.get("href", "")),
+                summary="",
+                published=parse_date(date_str),
+                source=config.name,
+            )
+        )
+    return articles
+
+
+def parse_genome_research(html: str, config: JournalConfig) -> List[Article]:
+    """Extract research article data from the Genome Research current issue page."""
+    soup = BeautifulSoup(html, "html.parser")
+    articles: List[Article] = []
+    for section in soup.select("div.toc-level.pub-section-Research"):
+        for item in section.select("li.toc-cit"):
+            title_tag = item.select_one("h4.cit-title-group")
+            if not title_tag:
+                continue
+            link_tag = item.select_one("div.cit-extra a[rel='abstract']")
+            if not link_tag:
+                continue
+            ahead_tag = item.select_one("span.cit-ahead-of-print-date")
+            if ahead_tag:
+                date_str = " ".join(
+                    t.strip()
+                    for t in ahead_tag.strings
+                    if t.strip() and t.strip() not in ("Published in Advance", ",")
+                )
+            else:
+                print_tag = item.select_one("span.cit-print-date")
+                date_str = text_or_empty(print_tag)
+            articles.append(
+                Article(
+                    title=title_tag.get_text(" ", strip=True),
+                    link=urljoin(config.base_url, link_tag.get("href", "")),
+                    summary="",
+                    published=parse_date(date_str),
+                    source=config.name,
+                )
+            )
+    return articles
+
+
 PARSER_MAP = {
     "Cell": parse_cell,
     "Nature": parse_nature,
     "Science": parse_science,
+    "Molecular Cell": parse_cell,
+    "Nature Cell Biology": parse_nature,
+    "Nature Biotechnology": parse_nature,
+    "Nature Methods": parse_nature,
+    "Genome Biology": parse_genome_biology,
+    "Genome Research": parse_genome_research,
 }
 
 
