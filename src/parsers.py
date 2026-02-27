@@ -223,7 +223,14 @@ def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
     except ET.ParseError:
         return []
 
-    _CORRECTION_PREFIX = ("Author Correction:", "Publisher Correction:")
+    _SKIP_PREFIXES = (
+        "Author Correction:",
+        "Publisher Correction:",
+        "Editorial Expression of Concern:",
+        "Editorial:",
+        "Daily briefing:",
+        "Reply to:",
+    )
 
     articles: List[Article] = []
     for item in root.findall("rss:item", ns):
@@ -233,7 +240,7 @@ def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
             or ""
         ).strip()
         title = _HTML_TAG.sub(" ", title_raw).strip()
-        if any(title.startswith(prefix) for prefix in _CORRECTION_PREFIX):
+        if any(title.startswith(prefix) for prefix in _SKIP_PREFIXES):
             continue
 
         link = item.findtext("rss:link", namespaces=ns) or ""
