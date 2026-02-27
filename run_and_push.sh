@@ -21,10 +21,10 @@ if ! python main.py; then
 fi
 
 echo "Staging feed files..."
-git add CNSfeed.xml mol_cell_bio_feed.xml methodology_feed.xml
+git add CNSFeed.xml MolCellFeed.xml MethodFeed.xml
 
 if git diff --cached --quiet; then
-  echo "No changes detected in CNSfeed.xml; nothing to commit."
+  echo "No changes detected in generated *.xml files; nothing to commit."
   exit 0
 fi
 
