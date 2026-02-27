@@ -15,7 +15,7 @@ else
 fi
 
 echo "Running scraper..."
-if ! python main.py; then
+if ! python src/main.py; then
   echo "main.py failed; aborting feed update." >&2
   exit 1
 fi
