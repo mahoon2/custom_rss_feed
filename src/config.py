@@ -24,7 +24,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
     ),
     JournalConfig(
         name="Nature",
-        url="https://www.nature.com/nature/research-articles",
+        url="https://www.nature.com/nature.rss",
         base_url="https://www.nature.com",
         include_terms=("research article", "research"),
         exclude_terms=("news & views",),
@@ -52,21 +52,21 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
     ),
     JournalConfig(
         name="Nature Cell Biology",
-        url="https://www.nature.com/ncb/research-articles",
+        url="https://www.nature.com/ncb.rss",
         base_url="https://www.nature.com",
         include_terms=("research article", "research"),
         exclude_terms=("news & views",),
     ),
     JournalConfig(
         name="Nature Biotechnology",
-        url="https://www.nature.com/nbt/research-articles",
+        url="https://www.nature.com/nbt.rss",
         base_url="https://www.nature.com",
         include_terms=("research article", "research"),
         exclude_terms=("news & views",),
     ),
     JournalConfig(
         name="Nature Methods",
-        url="https://www.nature.com/nmeth/research-articles",
+        url="https://www.nature.com/nmeth.rss",
         base_url="https://www.nature.com",
         include_terms=("research article", "research"),
         exclude_terms=("news & views",),

@@ -2,10 +2,14 @@ import re
 from datetime import datetime, timezone
 from typing import Callable, Dict, List, Optional
 from urllib.parse import urljoin
+from xml.etree import ElementTree as ET
 
 from bs4 import BeautifulSoup, Tag
 
 from models import Article, JournalConfig
+
+_HTML_TAG = re.compile(r"<[^>]+>")
+_NATURE_RSS_PREFIX = re.compile(r"^<p>.*?</p>", re.DOTALL)
 
 
 def parse_date(value: Optional[str]) -> Optional[datetime]:
@@ -201,14 +205,64 @@ def parse_genome_research(html: str, config: JournalConfig) -> List[Article]:
     return articles
 
 
+def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
+    """Extract article data from Nature's official RSS 1.0 (RDF) feed.
+
+    Nature.com research-article pages now return a JavaScript challenge page
+    that cannot be solved by HTTP-only clients. The official RSS feeds remain
+    accessible and contain the same article metadata.
+    """
+    ns = {
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rss": "http://purl.org/rss/1.0/",
+        "content": "http://purl.org/rss/1.0/modules/content/",
+        "dc": "http://purl.org/dc/elements/1.1/",
+    }
+    try:
+        root = ET.fromstring(html)
+    except ET.ParseError:
+        return []
+
+    _CORRECTION_PREFIX = ("Author Correction:", "Publisher Correction:")
+
+    articles: List[Article] = []
+    for item in root.findall("rss:item", ns):
+        title_raw = (
+            item.findtext("dc:title", namespaces=ns)
+            or item.findtext("rss:title", namespaces=ns)
+            or ""
+        ).strip()
+        title = _HTML_TAG.sub(" ", title_raw).strip()
+        if any(title.startswith(prefix) for prefix in _CORRECTION_PREFIX):
+            continue
+
+        link = item.findtext("rss:link", namespaces=ns) or ""
+
+        content = item.findtext("content:encoded", namespaces=ns) or ""
+        summary_html = _NATURE_RSS_PREFIX.sub("", content).strip()
+        summary = _HTML_TAG.sub(" ", summary_html).strip()
+
+        date_str = item.findtext("dc:date", namespaces=ns) or ""
+        articles.append(
+            Article(
+                title=title,
+                link=link,
+                summary=summary,
+                published=parse_date(date_str),
+                source=config.name,
+            )
+        )
+    return articles
+
+
 PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "Cell": parse_cell,
-    "Nature": parse_nature,
+    "Nature": parse_nature_rss,
     "Science": parse_science,
     "Molecular Cell": parse_cell,
-    "Nature Cell Biology": parse_nature,
-    "Nature Biotechnology": parse_nature,
-    "Nature Methods": parse_nature,
+    "Nature Cell Biology": parse_nature_rss,
+    "Nature Biotechnology": parse_nature_rss,
+    "Nature Methods": parse_nature_rss,
     "Genome Biology": parse_genome_biology,
     "Genome Research": parse_genome_research,
 }
@@ -220,7 +274,7 @@ def parse_journal(html: str, config: JournalConfig) -> List[Article]:
     if not parser:
         return []
     candidates = parser(html, config)
-    print(f"Extracted {len(candidates)} JSON-LD entries.")
+    print(f"Extracted {len(candidates)} entries.")
     filtered = [article for article in candidates if article.title and article.link]
     print(f"Filtered down to {len(filtered)} valid articles.")
     return filtered

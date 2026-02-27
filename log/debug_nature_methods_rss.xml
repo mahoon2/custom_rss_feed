@@ -1,0 +1,166 @@
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:prism="http://prismstandard.org/namespaces/basic/2.0/" xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns="http://purl.org/rss/1.0/" xmlns:admin="http://webns.net/mvcb/">
+    <channel rdf:about="http://feeds.nature.com/nmeth/rss/current">
+        <title>Nature Methods</title>
+        <description>Nature Methods offers a unique interdisciplinary forum for the publication of novel methods. Nature Methods focuses on the life sciences, combining practical, technique-driven subject matter with rigorous peer-review standards to ensure that readers are consistently presented with only the most valuable and highest quality methodological research. The journal offers its readers primary research papers as well as an array of opinions, reviews and short journalistic pieces to provide busy researchers with a broad, yet easily absorbed perspective of important methodological developments in the life sciences.</description>
+        <link>http://feeds.nature.com/nmeth/rss/current</link>
+        <admin:generatorAgent rdf:resource="https://www.nature.com/"/>
+        <admin:errorReportsTo rdf:resource="mailto:feedback@nature.com"/>
+        <dc:publisher>Nature Publishing Group</dc:publisher>
+        <dc:language>en</dc:language>
+        <dc:rights>© 2026 Macmillan Publishers Limited, part of Springer Nature. All rights reserved.</dc:rights>
+        <prism:publicationName>Nature Methods</prism:publicationName>
+        
+        
+        <prism:copyright>© 2026 Macmillan Publishers Limited, part of Springer Nature. All rights reserved.</prism:copyright>
+        <prism:rightsAgent>permissions@nature.com</prism:rightsAgent>
+        <image rdf:resource="https://www.nature.com/uploads/product/nmeth/rss.gif"/>
+        <items>
+            <rdf:Seq>
+                
+                    <rdf:li rdf:resource="https://www.nature.com/articles/s41592-026-03006-z"/>
+                
+                    <rdf:li rdf:resource="https://www.nature.com/articles/s41592-026-03031-y"/>
+                
+                    <rdf:li rdf:resource="https://www.nature.com/articles/s41592-026-03009-w"/>
+                
+                    <rdf:li rdf:resource="https://www.nature.com/articles/s41592-026-03012-1"/>
+                
+                    <rdf:li rdf:resource="https://www.nature.com/articles/s41592-026-03015-y"/>
+                
+                    <rdf:li rdf:resource="https://www.nature.com/articles/s41592-026-03013-0"/>
+                
+                    <rdf:li rdf:resource="https://www.nature.com/articles/s41592-026-03020-1"/>
+                
+                    <rdf:li rdf:resource="https://www.nature.com/articles/s41592-026-03014-z"/>
+                
+            </rdf:Seq>
+        </items>
+    </channel>
+    <image rdf:about="https://www.nature.com/uploads/product/nmeth/rss.gif">
+        <title>Nature Methods</title>
+        <url>https://www.nature.com/uploads/product/nmeth/rss.gif</url>
+        <link>http://feeds.nature.com/nmeth/rss/current</link>
+    </image>
+    
+        <item rdf:about="https://www.nature.com/articles/s41592-026-03006-z">
+            <title><![CDATA[Next-generation multicolor indicators for in vivo imaging of norepinephrine]]></title>
+            <link>https://www.nature.com/articles/s41592-026-03006-z</link>
+            <content:encoded>
+                <![CDATA[<p>Nature Methods, Published online: 26 February 2026; <a href="https://www.nature.com/articles/s41592-026-03006-z">doi:10.1038/s41592-026-03006-z</a></p>Improved red and green indicators for norepinephrine and their characterization are reported. These indicators allow detection of norepinephrine release in awake behaving mice in dual-color fiber photometry and two-photon imaging applications.]]></content:encoded>
+            <dc:title><![CDATA[Next-generation multicolor indicators for in vivo imaging of norepinephrine]]></dc:title>
+            <dc:creator>Valentin Lu Rohner</dc:creator><dc:creator>Sebastiano Curreli</dc:creator><dc:creator>Paul J. Lamothe-Molina</dc:creator><dc:creator>Zacharoula Kagiampaki</dc:creator><dc:creator>Andrew G. Yee</dc:creator><dc:creator>Chiara Nardin</dc:creator><dc:creator>Lena Eschholz</dc:creator><dc:creator>Alexander Dieter</dc:creator><dc:creator>Georgios Foustoukos</dc:creator><dc:creator>Paola Milanese</dc:creator><dc:creator>Lila Banterle</dc:creator><dc:creator>Thomas Childs</dc:creator><dc:creator>Annika Canziani</dc:creator><dc:creator>Jan Dernic</dc:creator><dc:creator>Luca Ravotto</dc:creator><dc:creator>Musadiq A. Bhat</dc:creator><dc:creator>Latife Sönmez</dc:creator><dc:creator>Laura Moreno Wasielewski</dc:creator><dc:creator>Tim Ziebarth</dc:creator><dc:creator>Marton Istvan Molnar</dc:creator><dc:creator>Gaoyang Huang</dc:creator><dc:creator>Olivia Andrea Masseck</dc:creator><dc:creator>Bruno Weber</dc:creator><dc:creator>Andreas Reiner</dc:creator><dc:creator>Anita Lüthi</dc:creator><dc:creator>Christopher P. Ford</dc:creator><dc:creator>J. Simon Wiegert</dc:creator><dc:creator>Sarah Ruediger</dc:creator><dc:creator>Tommaso Fellin</dc:creator><dc:creator>Tommaso Patriarchi</dc:creator>
+            <dc:identifier>doi:10.1038/s41592-026-03006-z</dc:identifier>
+            <dc:source>Nature Methods, Published online: 2026-02-26; | doi:10.1038/s41592-026-03006-z</dc:source>
+            <dc:date>2026-02-26</dc:date>
+            <prism:publicationName>Nature Methods</prism:publicationName>
+            <prism:doi>10.1038/s41592-026-03006-z</prism:doi>
+            <prism:url>https://www.nature.com/articles/s41592-026-03006-z</prism:url>
+        </item>
+    
+        <item rdf:about="https://www.nature.com/articles/s41592-026-03031-y">
+            <title><![CDATA[Author Correction: Single-cell multi-omic detection of DNA methylation and histone modifications reconstructs the dynamics of epigenomic maintenance]]></title>
+            <link>https://www.nature.com/articles/s41592-026-03031-y</link>
+            <content:encoded>
+                <![CDATA[<p>Nature Methods, Published online: 21 February 2026; <a href="https://www.nature.com/articles/s41592-026-03031-y">doi:10.1038/s41592-026-03031-y</a></p>Author Correction: Single-cell multi-omic detection of DNA methylation and histone modifications reconstructs the dynamics of epigenomic maintenance]]></content:encoded>
+            <dc:title><![CDATA[Author Correction: Single-cell multi-omic detection of DNA methylation and histone modifications reconstructs the dynamics of epigenomic maintenance]]></dc:title>
+            <dc:creator>Christoph Geisenberger</dc:creator><dc:creator>Jeroen van den Berg</dc:creator><dc:creator>Vincent van Batenburg</dc:creator><dc:creator>Buys de Barbanson</dc:creator><dc:creator>Anna Lyubimova</dc:creator><dc:creator>Joe Verity-Legg</dc:creator><dc:creator>Xiufei Chen</dc:creator><dc:creator>Yibin Liu</dc:creator><dc:creator>Chun-Xiao Song</dc:creator><dc:creator>Jeroen de Ridder</dc:creator><dc:creator>Alexander van Oudenaarden</dc:creator>
+            <dc:identifier>doi:10.1038/s41592-026-03031-y</dc:identifier>
+            <dc:source>Nature Methods, Published online: 2026-02-21; | doi:10.1038/s41592-026-03031-y</dc:source>
+            <dc:date>2026-02-21</dc:date>
+            <prism:publicationName>Nature Methods</prism:publicationName>
+            <prism:doi>10.1038/s41592-026-03031-y</prism:doi>
+            <prism:url>https://www.nature.com/articles/s41592-026-03031-y</prism:url>
+        </item>
+    
+        <item rdf:about="https://www.nature.com/articles/s41592-026-03009-w">
+            <title><![CDATA[Mentoring echoes down the generations]]></title>
+            <link>https://www.nature.com/articles/s41592-026-03009-w</link>
+            <content:encoded>
+                <![CDATA[<p>Nature Methods, Published online: 13 February 2026; <a href="https://www.nature.com/articles/s41592-026-03009-w">doi:10.1038/s41592-026-03009-w</a></p>As they train the next generation of scientists, some senior researchers share why they find mentoring fun and rewarding.]]></content:encoded>
+            <dc:title><![CDATA[Mentoring echoes down the generations]]></dc:title>
+            <dc:creator>Vivien Marx</dc:creator>
+            <dc:identifier>doi:10.1038/s41592-026-03009-w</dc:identifier>
+            <dc:source>Nature Methods, Published online: 2026-02-13; | doi:10.1038/s41592-026-03009-w</dc:source>
+            <dc:date>2026-02-13</dc:date>
+            <prism:publicationName>Nature Methods</prism:publicationName>
+            <prism:doi>10.1038/s41592-026-03009-w</prism:doi>
+            <prism:url>https://www.nature.com/articles/s41592-026-03009-w</prism:url>
+        </item>
+    
+        <item rdf:about="https://www.nature.com/articles/s41592-026-03012-1">
+            <title><![CDATA[Long-term imaging in the embryonic mouse brain]]></title>
+            <link>https://www.nature.com/articles/s41592-026-03012-1</link>
+            <content:encoded>
+                <![CDATA[<p>Nature Methods, Published online: 11 February 2026; <a href="https://www.nature.com/articles/s41592-026-03012-1">doi:10.1038/s41592-026-03012-1</a></p>Long-term imaging in the embryonic mouse brain]]></content:encoded>
+            <dc:title><![CDATA[Long-term imaging in the embryonic mouse brain]]></dc:title>
+            <dc:creator>Nina Vogt</dc:creator>
+            <dc:identifier>doi:10.1038/s41592-026-03012-1</dc:identifier>
+            <dc:source>Nature Methods, Published online: 2026-02-11; | doi:10.1038/s41592-026-03012-1</dc:source>
+            <dc:date>2026-02-11</dc:date>
+            <prism:publicationName>Nature Methods</prism:publicationName>
+            <prism:doi>10.1038/s41592-026-03012-1</prism:doi>
+            <prism:url>https://www.nature.com/articles/s41592-026-03012-1</prism:url>
+        </item>
+    
+        <item rdf:about="https://www.nature.com/articles/s41592-026-03015-y">
+            <title><![CDATA[SPARKing aptamer discovery]]></title>
+            <link>https://www.nature.com/articles/s41592-026-03015-y</link>
+            <content:encoded>
+                <![CDATA[<p>Nature Methods, Published online: 11 February 2026; <a href="https://www.nature.com/articles/s41592-026-03015-y">doi:10.1038/s41592-026-03015-y</a></p>SPARKing aptamer discovery]]></content:encoded>
+            <dc:title><![CDATA[SPARKing aptamer discovery]]></dc:title>
+            <dc:creator>Aparna Anantharaman</dc:creator>
+            <dc:identifier>doi:10.1038/s41592-026-03015-y</dc:identifier>
+            <dc:source>Nature Methods, Published online: 2026-02-11; | doi:10.1038/s41592-026-03015-y</dc:source>
+            <dc:date>2026-02-11</dc:date>
+            <prism:publicationName>Nature Methods</prism:publicationName>
+            <prism:doi>10.1038/s41592-026-03015-y</prism:doi>
+            <prism:url>https://www.nature.com/articles/s41592-026-03015-y</prism:url>
+        </item>
+    
+        <item rdf:about="https://www.nature.com/articles/s41592-026-03013-0">
+            <title><![CDATA[Diffusion model generating regulatory DNAs]]></title>
+            <link>https://www.nature.com/articles/s41592-026-03013-0</link>
+            <content:encoded>
+                <![CDATA[<p>Nature Methods, Published online: 11 February 2026; <a href="https://www.nature.com/articles/s41592-026-03013-0">doi:10.1038/s41592-026-03013-0</a></p>Diffusion model generating regulatory DNAs]]></content:encoded>
+            <dc:title><![CDATA[Diffusion model generating regulatory DNAs]]></dc:title>
+            <dc:creator>Lin Tang</dc:creator>
+            <dc:identifier>doi:10.1038/s41592-026-03013-0</dc:identifier>
+            <dc:source>Nature Methods, Published online: 2026-02-11; | doi:10.1038/s41592-026-03013-0</dc:source>
+            <dc:date>2026-02-11</dc:date>
+            <prism:publicationName>Nature Methods</prism:publicationName>
+            <prism:doi>10.1038/s41592-026-03013-0</prism:doi>
+            <prism:url>https://www.nature.com/articles/s41592-026-03013-0</prism:url>
+        </item>
+    
+        <item rdf:about="https://www.nature.com/articles/s41592-026-03020-1">
+            <title><![CDATA[Using AI responsibly in scientific publishing]]></title>
+            <link>https://www.nature.com/articles/s41592-026-03020-1</link>
+            <content:encoded>
+                <![CDATA[<p>Nature Methods, Published online: 11 February 2026; <a href="https://www.nature.com/articles/s41592-026-03020-1">doi:10.1038/s41592-026-03020-1</a></p>Generative AI technology is having substantial impacts across society, and scientific publishing is by no means immune. We highlight journal policies around the use of generative AI and discuss its responsible use in writing, peer reviewing and publishing scientific research.]]></content:encoded>
+            <dc:title><![CDATA[Using AI responsibly in scientific publishing]]></dc:title>
+            
+            <dc:identifier>doi:10.1038/s41592-026-03020-1</dc:identifier>
+            <dc:source>Nature Methods, Published online: 2026-02-11; | doi:10.1038/s41592-026-03020-1</dc:source>
+            <dc:date>2026-02-11</dc:date>
+            <prism:publicationName>Nature Methods</prism:publicationName>
+            <prism:doi>10.1038/s41592-026-03020-1</prism:doi>
+            <prism:url>https://www.nature.com/articles/s41592-026-03020-1</prism:url>
+        </item>
+    
+        <item rdf:about="https://www.nature.com/articles/s41592-026-03014-z">
+            <title><![CDATA[CATCHing off-target drugs]]></title>
+            <link>https://www.nature.com/articles/s41592-026-03014-z</link>
+            <content:encoded>
+                <![CDATA[<p>Nature Methods, Published online: 11 February 2026; <a href="https://www.nature.com/articles/s41592-026-03014-z">doi:10.1038/s41592-026-03014-z</a></p>CATCHing off-target drugs]]></content:encoded>
+            <dc:title><![CDATA[CATCHing off-target drugs]]></dc:title>
+            <dc:creator>Fariha Rahman</dc:creator>
+            <dc:identifier>doi:10.1038/s41592-026-03014-z</dc:identifier>
+            <dc:source>Nature Methods, Published online: 2026-02-11; | doi:10.1038/s41592-026-03014-z</dc:source>
+            <dc:date>2026-02-11</dc:date>
+            <prism:publicationName>Nature Methods</prism:publicationName>
+            <prism:doi>10.1038/s41592-026-03014-z</prism:doi>
+            <prism:url>https://www.nature.com/articles/s41592-026-03014-z</prism:url>
+        </item>
+    
+</rdf:RDF>
