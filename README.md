@@ -22,8 +22,8 @@ https://mahoon2.github.io/custom_rss_feed/MethodFeed.xml
 
 `src/main.py` fetches each journal's source, parses it into `Article` objects, and serializes three RSS 2.0 files via `rfeed`. Two parsing strategies are used depending on the publisher:
 
-- **HTML scraping** (Cell, Science, Molecular Cell, Genome Biology, Genome Research): CSS selectors target article cards on each journal's "new articles" or "current issue" page.
-- **RSS 1.0/RDF feed** (Nature, Nature Cell Biology, Nature Biotechnology, Nature Methods): Nature's official RSS feeds are consumed directly. This is necessary because `nature.com` pages return a JavaScript proof-of-work challenge that HTTP-only clients cannot solve. Non-research items (corrections, editorials, daily briefings) are filtered by title prefix.
+- **HTML scraping** (Cell, Molecular Cell, Genome Biology, Genome Research): CSS selectors target article cards on each journal's "new articles" or "current issue" page.
+- **RSS 1.0/RDF feed** (Nature, Nature Cell Biology, Nature Biotechnology, Nature Methods, Science): Official RSS feeds are consumed directly, bypassing JavaScript-rendered pages. Nature feeds filter non-research items by title prefix and by requiring two or more `dc:creator` tags (single-author entries are typically News or Perspectives). Science's e-TOC feed filters by `dc:type == "Research Article"`.
 
 Requests are made with `curl_cffi` (TLS fingerprint impersonation) and retried up to five times on transient HTTP errors.
 
