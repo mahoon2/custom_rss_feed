@@ -243,6 +243,10 @@ def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
         if any(title.startswith(prefix) for prefix in _SKIP_PREFIXES):
             continue
 
+        creators = item.findall("dc:creator", ns)
+        if len(creators) < 2:
+            continue
+
         link = item.findtext("rss:link", namespaces=ns) or ""
 
         content = item.findtext("content:encoded", namespaces=ns) or ""
@@ -262,10 +266,52 @@ def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
     return articles
 
 
+def parse_science_rss(xml: str, config: JournalConfig) -> List[Article]:
+    """Extract Research Articles from Science's official RSS 1.0 (RDF) e-TOC feed.
+
+    Filters on dc:type == 'Research Article' to exclude Perspectives, News,
+    Letters, and other non-research content that share the same feed.
+    """
+    ns = {
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rss": "http://purl.org/rss/1.0/",
+        "dc": "http://purl.org/dc/elements/1.1/",
+    }
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError:
+        return []
+
+    articles: List[Article] = []
+    for item in root.findall("rss:item", ns):
+        dc_type = (item.findtext("dc:type", namespaces=ns) or "").strip()
+        if dc_type != "Research Article":
+            continue
+
+        title_raw = (
+            item.findtext("dc:title", namespaces=ns)
+            or item.findtext("rss:title", namespaces=ns)
+            or ""
+        ).strip()
+        title = _HTML_TAG.sub(" ", title_raw).strip()
+        link = item.findtext("rss:link", namespaces=ns) or ""
+        date_str = item.findtext("dc:date", namespaces=ns) or ""
+        articles.append(
+            Article(
+                title=title,
+                link=link,
+                summary="",
+                published=parse_date(date_str),
+                source=config.name,
+            )
+        )
+    return articles
+
+
 PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "Cell": parse_cell,
     "Nature": parse_nature_rss,
-    "Science": parse_science,
+    "Science": parse_science_rss,
     "Molecular Cell": parse_cell,
     "Nature Cell Biology": parse_nature_rss,
     "Nature Biotechnology": parse_nature_rss,

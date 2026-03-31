@@ -31,10 +31,10 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
     ),
     JournalConfig(
         name="Science",
-        url="https://www.science.org/journal/science/research",
+        url="https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science",
         base_url="https://www.science.org",
-        include_terms=("research article", "research"),
-        exclude_terms=("perspective", "books", "policy forum", "letter", "news"),
+        include_terms=(),
+        exclude_terms=(),
     ),
     JournalConfig(
         name="Molecular Cell",
