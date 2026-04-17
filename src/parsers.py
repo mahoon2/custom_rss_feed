@@ -120,24 +120,54 @@ def parse_science(html: str, config: JournalConfig) -> List[Article]:
     return articles
 
 
-def parse_cell(html: str, config: JournalConfig) -> List[Article]:
-    """Extract article data from the Cell new articles page."""
-    soup = BeautifulSoup(html, "html.parser")
-    items = soup.select("div.toc__item")
+_CELL_RESEARCH_SECTIONS = frozenset({"Article", "Short article", "Resource"})
+
+
+def parse_cell_rss(xml: str, config: JournalConfig) -> List[Article]:
+    """Extract research articles from Cell's RSS 1.0 (RDF) in-press feed.
+
+    Filters on prism:section to keep only primary research (Article, Short
+    article, Resource), excluding Reviews, Perspectives, Editorials, Previews,
+    Commentaries, SnapShots, Spotlights, Voices, Stories, and Corrections that
+    share the same feed.
+    """
+    ns = {
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rss": "http://purl.org/rss/1.0/",
+        "dc": "http://purl.org/dc/elements/1.1/",
+        "prism": "http://prismstandard.org/namespaces/1.2/basic/",
+    }
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError:
+        return []
+
     articles: List[Article] = []
-    for item in items:
-        title_tag = item.select_one("h3.toc__item__title a")
-        if not title_tag:
+    for item in root.findall("rss:item", ns):
+        section = (item.findtext("prism:section", namespaces=ns) or "").strip()
+        if section not in _CELL_RESEARCH_SECTIONS:
             continue
-        summary_tag = item.select_one("div.toc__item__brief")
-        date_tag = item.select_one("div.toc__item__date")
-        published = parse_date(text_or_empty(date_tag))
+
+        title_raw = (
+            item.findtext("dc:title", namespaces=ns)
+            or item.findtext("rss:title", namespaces=ns)
+            or ""
+        ).strip()
+        title = _HTML_TAG.sub(" ", title_raw).strip()
+        link = (item.findtext("rss:link", namespaces=ns) or "").strip()
+        summary_raw = item.findtext("rss:description", namespaces=ns) or ""
+        summary = _HTML_TAG.sub(" ", summary_raw).strip()
+        date_str = (
+            item.findtext("dc:date", namespaces=ns)
+            or item.findtext("prism:publicationDate", namespaces=ns)
+            or ""
+        )
         articles.append(
             Article(
-                title=text_or_empty(title_tag),
-                link=urljoin(config.base_url, title_tag.get("href", "")),
-                summary=text_or_empty(summary_tag),
-                published=published,
+                title=title,
+                link=link,
+                summary=summary,
+                published=parse_date(date_str),
                 source=config.name,
             )
         )
@@ -365,10 +395,10 @@ def parse_oup_rss(xml: str, config: JournalConfig) -> List[Article]:
 
 
 PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
-    "Cell": parse_cell,
+    "Cell": parse_cell_rss,
     "Nature": parse_nature_rss,
     "Science": parse_science_rss,
-    "Molecular Cell": parse_cell,
+    "Molecular Cell": parse_cell_rss,
     "Nature Cell Biology": parse_nature_rss,
     "Nature Biotechnology": parse_nature_rss,
     "Nature Methods": parse_nature_rss,

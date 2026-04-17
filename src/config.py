@@ -10,17 +10,10 @@ TRUST_HEADERS: Dict[str, str] = {
 JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
     JournalConfig(
         name="Cell",
-        url="https://www.cell.com/cell/newarticles",
+        url="https://www.cell.com/cell/inpress.rss",
         base_url="https://www.cell.com",
-        include_terms=("research article", "article"),
-        exclude_terms=(
-            "news",
-            "editorial",
-            "briefing",
-            "ahead of print",
-            "perspective",
-            "pre-proof",
-        ),
+        include_terms=(),
+        exclude_terms=(),
     ),
     JournalConfig(
         name="Nature",
@@ -38,17 +31,10 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
     ),
     JournalConfig(
         name="Molecular Cell",
-        url="https://www.cell.com/molecular-cell/newarticles",
+        url="https://www.cell.com/molecular-cell/inpress.rss",
         base_url="https://www.cell.com",
-        include_terms=("research article", "article"),
-        exclude_terms=(
-            "news",
-            "editorial",
-            "briefing",
-            "ahead of print",
-            "perspective",
-            "pre-proof",
-        ),
+        include_terms=(),
+        exclude_terms=(),
     ),
     JournalConfig(
         name="Nature Cell Biology",

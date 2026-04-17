@@ -22,8 +22,8 @@ https://mahoon2.github.io/custom_rss_feed/MethodFeed.xml
 
 `src/main.py` fetches each journal's source, parses it into `Article` objects, and serializes three RSS 2.0 files via `rfeed`. Two parsing strategies are used depending on the publisher:
 
-- **HTML scraping** (Cell, Molecular Cell, Genome Biology, Genome Research): CSS selectors target article cards on each journal's "new articles" or "current issue" page.
-- **RSS 1.0/RDF feed** (Nature, Nature Cell Biology, Nature Biotechnology, Nature Methods, Science): Official RSS feeds are consumed directly, bypassing JavaScript-rendered pages. Nature feeds filter non-research items by title prefix and by requiring two or more `dc:creator` tags (single-author entries are typically News or Perspectives). Science's e-TOC feed filters by `dc:type == "Research Article"`.
+- **HTML scraping** (Genome Biology, Genome Research): CSS selectors target article cards on each journal's "current articles" page.
+- **RSS 1.0/RDF feed** (Cell, Molecular Cell, Nature, Nature Cell Biology, Nature Biotechnology, Nature Methods, Science): Official RSS feeds are consumed directly, bypassing JavaScript-rendered pages and Cloudflare challenges. Cell-family in-press feeds filter by `prism:section` to keep only `Article`, `Short article`, and `Resource` (excluding Reviews, Perspectives, Editorials, Corrections, etc.). Nature feeds filter non-research items by title prefix and by requiring two or more `dc:creator` tags (single-author entries are typically News or Perspectives). Science's e-TOC feed filters by `dc:type == "Research Article"`.
 - **RSS 2.0 feed** (Nucleic Acids Research, Briefings in Bioinformatics): OUP's per-issue RSS feeds are consumed directly. Because OUP RSS lacks `dc:creator` and `dc:type` fields, non-research items (errata, editorials, letters) are filtered by title prefix.
 
 Requests are made with `curl_cffi` (TLS fingerprint impersonation) and retried up to five times on transient HTTP errors.
