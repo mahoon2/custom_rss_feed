@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Callable, Dict, List, Optional
 from urllib.parse import urljoin
 from xml.etree import ElementTree as ET
@@ -17,6 +18,14 @@ def parse_date(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     cleaned = value.strip()
+
+    try:
+        parsed = parsedate_to_datetime(cleaned)
+        if parsed:
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        pass
+
     if ":" in cleaned and not cleaned.startswith("20"):
         parts = cleaned.split(":", 1)
         cleaned = parts[1].strip() if len(parts) > 1 else parts[0].strip()
@@ -308,6 +317,53 @@ def parse_science_rss(xml: str, config: JournalConfig) -> List[Article]:
     return articles
 
 
+_OUP_SKIP_PREFIXES = (
+    "Correction to",
+    "Corrigendum",
+    "Editorial",
+    "Erratum",
+    "Letter to the editor",
+    "Retraction",
+    "Retraction of",
+)
+
+
+def parse_oup_rss(xml: str, config: JournalConfig) -> List[Article]:
+    """Extract articles from OUP's RSS 2.0 feed (used by NAR, Briefings in Bioinformatics).
+
+    OUP RSS lacks dc:creator and dc:type, so non-research items are filtered by
+    title prefix instead of by metadata.
+    """
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError:
+        return []
+
+    articles: List[Article] = []
+    for item in root.findall("./channel/item"):
+        title_raw = (item.findtext("title") or "").strip()
+        title = _HTML_TAG.sub(" ", title_raw).strip()
+        lowered = title.lower()
+        if any(lowered.startswith(p.lower()) for p in _OUP_SKIP_PREFIXES):
+            continue
+
+        link = (item.findtext("link") or "").strip()
+        summary_html = (item.findtext("description") or "").strip()
+        summary = _HTML_TAG.sub(" ", summary_html).strip()
+        date_str = item.findtext("pubDate") or ""
+
+        articles.append(
+            Article(
+                title=title,
+                link=link,
+                summary=summary,
+                published=parse_date(date_str),
+                source=config.name,
+            )
+        )
+    return articles
+
+
 PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "Cell": parse_cell,
     "Nature": parse_nature_rss,
@@ -318,6 +374,8 @@ PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "Nature Methods": parse_nature_rss,
     "Genome Biology": parse_genome_biology,
     "Genome Research": parse_genome_research,
+    "Nucleic Acids Research": parse_oup_rss,
+    "Briefings in Bioinformatics": parse_oup_rss,
 }
 
 

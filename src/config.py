@@ -85,6 +85,20 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         include_terms=("research",),
         exclude_terms=(),
     ),
+    JournalConfig(
+        name="Nucleic Acids Research",
+        url="https://academic.oup.com/rss/site_5127/3091.xml",
+        base_url="https://academic.oup.com",
+        include_terms=(),
+        exclude_terms=(),
+    ),
+    JournalConfig(
+        name="Briefings in Bioinformatics",
+        url="https://academic.oup.com/rss/site_5143/3005.xml",
+        base_url="https://academic.oup.com",
+        include_terms=(),
+        exclude_terms=(),
+    ),
 )
 
 BASE_GITHUB_URL: str = "https://mahoon2.github.io/custom_rss_feed"
@@ -99,7 +113,7 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
     ),
     FeedConfig(
         title="Molecular & Cell Biology Feed",
-        description="Aggregated research articles from Nature Cell Biology, Genome Biology, Genome Research, and Molecular Cell.",
+        description="Aggregated research articles from Nature Cell Biology, Genome Biology, Genome Research, Molecular Cell, and Nucleic Acids Research.",
         output_file="MolCellFeed.xml",
         link=f"{BASE_GITHUB_URL}/MolCellFeed.xml",
         journal_names=(
@@ -107,13 +121,18 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
             "Genome Biology",
             "Genome Research",
             "Molecular Cell",
+            "Nucleic Acids Research",
         ),
     ),
     FeedConfig(
         title="Methodology Feed",
-        description="Aggregated research articles from Nature Biotechnology and Nature Methods.",
+        description="Aggregated research articles from Nature Biotechnology, Nature Methods, and Briefings in Bioinformatics.",
         output_file="MethodFeed.xml",
         link=f"{BASE_GITHUB_URL}/MethodFeed.xml",
-        journal_names=("Nature Biotechnology", "Nature Methods"),
+        journal_names=(
+            "Nature Biotechnology",
+            "Nature Methods",
+            "Briefings in Bioinformatics",
+        ),
     ),
 )

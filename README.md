@@ -1,14 +1,14 @@
 # Custom Research RSS Feed
 
-Aggregates the latest research articles from nine journals into three curated RSS 2.0 feeds, hosted via GitHub Pages.
+Aggregates the latest research articles from eleven journals into three curated RSS 2.0 feeds, hosted via GitHub Pages.
 
 ## Feeds
 
 | Feed | File | Journals |
 |---|---|---|
 | CNS Feed | `CNSFeed.xml` | Cell, Nature, Science |
-| Molecular & Cell Biology Feed | `MolCellFeed.xml` | Molecular Cell, Nature Cell Biology, Genome Biology, Genome Research |
-| Methodology Feed | `MethodFeed.xml` | Nature Biotechnology, Nature Methods |
+| Molecular & Cell Biology Feed | `MolCellFeed.xml` | Molecular Cell, Nature Cell Biology, Genome Biology, Genome Research, Nucleic Acids Research |
+| Methodology Feed | `MethodFeed.xml` | Nature Biotechnology, Nature Methods, Briefings in Bioinformatics |
 
 Subscribe using the raw GitHub Pages URLs:
 
@@ -24,6 +24,7 @@ https://mahoon2.github.io/custom_rss_feed/MethodFeed.xml
 
 - **HTML scraping** (Cell, Molecular Cell, Genome Biology, Genome Research): CSS selectors target article cards on each journal's "new articles" or "current issue" page.
 - **RSS 1.0/RDF feed** (Nature, Nature Cell Biology, Nature Biotechnology, Nature Methods, Science): Official RSS feeds are consumed directly, bypassing JavaScript-rendered pages. Nature feeds filter non-research items by title prefix and by requiring two or more `dc:creator` tags (single-author entries are typically News or Perspectives). Science's e-TOC feed filters by `dc:type == "Research Article"`.
+- **RSS 2.0 feed** (Nucleic Acids Research, Briefings in Bioinformatics): OUP's per-issue RSS feeds are consumed directly. Because OUP RSS lacks `dc:creator` and `dc:type` fields, non-research items (errata, editorials, letters) are filtered by title prefix.
 
 Requests are made with `curl_cffi` (TLS fingerprint impersonation) and retried up to five times on transient HTTP errors.
 
