@@ -1,12 +1,13 @@
 from curl_cffi import requests
+from curl_cffi.requests import exceptions
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from config import TRUST_HEADERS
 
 
-def is_transient_error(exception: Exception) -> bool:
+def is_transient_error(exception: BaseException) -> bool:
     """Determine whether an exception should trigger a retry."""
-    if isinstance(exception, requests.exceptions.HTTPError):
+    if isinstance(exception, exceptions.HTTPError):
         response = exception.response
         if response and response.status_code in {403, 503}:
             return True

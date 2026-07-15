@@ -55,6 +55,12 @@ def text_or_empty(tag: Optional[Tag]) -> str:
     return tag.get_text(" ", strip=True) if tag else ""
 
 
+def attr_or_empty(tag: Tag, name: str) -> str:
+    """Return a string attribute value or an empty string."""
+    value = tag.get(name, "")
+    return value if isinstance(value, str) else ""
+
+
 def parse_nature(html: str, config: JournalConfig) -> List[Article]:
     """Extract article data from the Nature research page."""
     soup = BeautifulSoup(html, "html.parser")
@@ -66,15 +72,16 @@ def parse_nature(html: str, config: JournalConfig) -> List[Article]:
             continue
         summary_tag = card.select_one('div[data-test="article-description"] p')
         time_tag = card.select_one('time[itemprop="datePublished"]')
+        datetime_value = attr_or_empty(time_tag, "datetime") if time_tag else ""
         published = (
-            parse_date(time_tag.get("datetime"))
-            if time_tag and time_tag.get("datetime")
+            parse_date(datetime_value)
+            if datetime_value
             else parse_date(text_or_empty(time_tag))
         )
         articles.append(
             Article(
                 title=text_or_empty(title_tag),
-                link=urljoin(config.base_url, title_tag.get("href", "")),
+                link=urljoin(config.base_url, attr_or_empty(title_tag, "href")),
                 summary=text_or_empty(summary_tag),
                 published=published,
                 source=config.name,
@@ -103,15 +110,16 @@ def parse_science(html: str, config: JournalConfig) -> List[Article]:
             continue
         summary_tag = card.select_one("ul.card-contribs")
         time_tag = card.select_one("div.card-meta time")
+        datetime_value = attr_or_empty(time_tag, "datetime") if time_tag else ""
         published = (
-            parse_date(time_tag.get("datetime"))
-            if time_tag and time_tag.get("datetime")
+            parse_date(datetime_value)
+            if datetime_value
             else parse_date(text_or_empty(time_tag))
         )
         articles.append(
             Article(
                 title=text_or_empty(title_tag),
-                link=urljoin(config.base_url, title_tag.get("href", "")),
+                link=urljoin(config.base_url, attr_or_empty(title_tag, "href")),
                 summary=text_or_empty(summary_tag),
                 published=published,
                 source=config.name,
@@ -201,7 +209,7 @@ def parse_genome_biology(html: str, config: JournalConfig) -> List[Article]:
         articles.append(
             Article(
                 title=text_or_empty(link_tag),
-                link=urljoin(config.base_url, link_tag.get("href", "")),
+                link=urljoin(config.base_url, attr_or_empty(link_tag, "href")),
                 summary="",
                 published=parse_date(date_str),
                 source=config.name,
@@ -235,7 +243,7 @@ def parse_genome_research(html: str, config: JournalConfig) -> List[Article]:
             articles.append(
                 Article(
                     title=title_tag.get_text(" ", strip=True),
-                    link=urljoin(config.base_url, link_tag.get("href", "")),
+                    link=urljoin(config.base_url, attr_or_empty(link_tag, "href")),
                     summary="",
                     published=parse_date(date_str),
                     source=config.name,
@@ -400,12 +408,14 @@ PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "Science": parse_science_rss,
     "Molecular Cell": parse_cell_rss,
     "Nature Cell Biology": parse_nature_rss,
+    "Nature Communications": parse_nature_rss,
     "Nature Biotechnology": parse_nature_rss,
     "Nature Methods": parse_nature_rss,
     "Genome Biology": parse_genome_biology,
     "Genome Research": parse_genome_research,
     "Nucleic Acids Research": parse_oup_rss,
     "Briefings in Bioinformatics": parse_oup_rss,
+    "Bioinformatics": parse_oup_rss,
 }
 
 

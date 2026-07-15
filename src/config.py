@@ -44,6 +44,13 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         exclude_terms=("news & views",),
     ),
     JournalConfig(
+        name="Nature Communications",
+        url="https://www.nature.com/ncomms.rss",
+        base_url="https://www.nature.com",
+        include_terms=(),
+        exclude_terms=(),
+    ),
+    JournalConfig(
         name="Nature Biotechnology",
         url="https://www.nature.com/nbt.rss",
         base_url="https://www.nature.com",
@@ -85,6 +92,13 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         include_terms=(),
         exclude_terms=(),
     ),
+    JournalConfig(
+        name="Bioinformatics",
+        url="https://academic.oup.com/rss/site_5139/advanceAccess_3001.xml",
+        base_url="https://academic.oup.com",
+        include_terms=(),
+        exclude_terms=(),
+    ),
 )
 
 BASE_GITHUB_URL: str = "https://mahoon2.github.io/custom_rss_feed"
@@ -99,11 +113,12 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
     ),
     FeedConfig(
         title="Molecular & Cell Biology Feed",
-        description="Aggregated research articles from Nature Cell Biology, Genome Biology, Genome Research, Molecular Cell, and Nucleic Acids Research.",
+        description="Aggregated research articles from Nature Cell Biology, Nature Communications, Genome Biology, Genome Research, Molecular Cell, and Nucleic Acids Research.",
         output_file="MolCellFeed.xml",
         link=f"{BASE_GITHUB_URL}/MolCellFeed.xml",
         journal_names=(
             "Nature Cell Biology",
+            "Nature Communications",
             "Genome Biology",
             "Genome Research",
             "Molecular Cell",
@@ -112,13 +127,14 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
     ),
     FeedConfig(
         title="Methodology Feed",
-        description="Aggregated research articles from Nature Biotechnology, Nature Methods, and Briefings in Bioinformatics.",
+        description="Aggregated research articles from Nature Biotechnology, Nature Methods, Briefings in Bioinformatics, and Bioinformatics.",
         output_file="MethodFeed.xml",
         link=f"{BASE_GITHUB_URL}/MethodFeed.xml",
         journal_names=(
             "Nature Biotechnology",
             "Nature Methods",
             "Briefings in Bioinformatics",
+            "Bioinformatics",
         ),
     ),
 )
