@@ -282,27 +282,39 @@ def _cshl_toc_date(item: Tag) -> str:
     return text_or_empty(print_tag)
 
 
+_GENOME_RESEARCH_SECTIONS = frozenset(
+    {"Research", "Methods", "Resource", "Report", "Article"}
+)
+
+
 def parse_genome_research(html: str, config: JournalConfig) -> List[Article]:
-    """Extract research article data from the Genome Research current issue page."""
+    """Extract research article data from the Genome Research current issue page.
+
+    The redesigned issue page groups article cards under <h3> section headings
+    (Perspective, Research, Methods, Resource, Corrigenda); each card's nearest
+    preceding heading is its section, and only primary research sections are
+    kept.
+    """
     soup = BeautifulSoup(html, "html.parser")
     articles: List[Article] = []
-    for section in soup.select("div.toc-level.pub-section-Research"):
-        for item in section.select("li.toc-cit"):
-            title_tag = item.select_one("h4.cit-title-group")
-            if not title_tag:
-                continue
-            link_tag = item.select_one("div.cit-extra a[rel='abstract']")
-            if not link_tag:
-                continue
-            articles.append(
-                Article(
-                    title=title_tag.get_text(" ", strip=True),
-                    link=urljoin(config.base_url, attr_or_empty(link_tag, "href")),
-                    summary="",
-                    published=parse_date(_cshl_toc_date(item)),
-                    source=config.name,
-                )
+    for card in soup.select("article.article-section"):
+        heading = card.find_previous("h3")
+        section = heading.get_text(" ", strip=True) if heading else ""
+        if section not in _GENOME_RESEARCH_SECTIONS:
+            continue
+        link_tag = card.select_one("h5.title a.title") or card.select_one("a.title")
+        if not link_tag:
+            continue
+        date_tag = card.select_one("span.card-citation-value")
+        articles.append(
+            Article(
+                title=link_tag.get_text(" ", strip=True),
+                link=urljoin(config.base_url, attr_or_empty(link_tag, "href")),
+                summary="",
+                published=parse_date(text_or_empty(date_tag)),
+                source=config.name,
             )
+        )
     return articles
 
 
