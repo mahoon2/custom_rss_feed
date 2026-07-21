@@ -7,6 +7,52 @@ TRUST_HEADERS: Dict[str, str] = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+NATURE_ARTICLE_JOURNALS: Tuple[Tuple[str, str], ...] = (
+    ("Nature Cell Biology", "ncb"),
+    ("Nature Communications", "ncomms"),
+    ("Nature Biotechnology", "nbt"),
+    ("Nature Methods", "nmeth"),
+    ("Nature Genetics", "ng"),
+    ("Nature Structural & Molecular Biology", "nsmb"),
+)
+
+NATURE_ARTICLE_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
+    JournalConfig(
+        name=name,
+        url=f"https://www.nature.com/{code}/articles?searchType=journalSearch&sort=PubDate&type=article",
+        base_url="https://www.nature.com",
+        include_terms=(),
+        exclude_terms=(),
+        parser_key="nature_article_html",
+        fallback_url=f"https://www.nature.com/{code}.rss",
+        fallback_parser_key="nature_rss",
+    )
+    for name, code in NATURE_ARTICLE_JOURNALS
+)
+
+NATURE_REVIEW_LISTING_CONFIGS: Tuple[JournalConfig, ...] = (
+    JournalConfig(
+        name="Nature Reviews Molecular Cell Biology",
+        url="https://www.nature.com/nrm/articles",
+        base_url="https://www.nature.com",
+        include_terms=(),
+        exclude_terms=(),
+        parser_key="nature_html",
+        fallback_url="https://www.nature.com/nrm.rss",
+        fallback_parser_key="nature_review_rss",
+    ),
+    JournalConfig(
+        name="Nature Reviews Genetics",
+        url="https://www.nature.com/nrg/articles",
+        base_url="https://www.nature.com",
+        include_terms=(),
+        exclude_terms=(),
+        parser_key="nature_html",
+        fallback_url="https://www.nature.com/nrg.rss",
+        fallback_parser_key="nature_review_rss",
+    ),
+)
+
 JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
     JournalConfig(
         name="Cell",
@@ -36,34 +82,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         include_terms=(),
         exclude_terms=(),
     ),
-    JournalConfig(
-        name="Nature Cell Biology",
-        url="https://www.nature.com/ncb.rss",
-        base_url="https://www.nature.com",
-        include_terms=("research article", "research"),
-        exclude_terms=("news & views",),
-    ),
-    JournalConfig(
-        name="Nature Communications",
-        url="https://www.nature.com/ncomms.rss",
-        base_url="https://www.nature.com",
-        include_terms=(),
-        exclude_terms=(),
-    ),
-    JournalConfig(
-        name="Nature Biotechnology",
-        url="https://www.nature.com/nbt.rss",
-        base_url="https://www.nature.com",
-        include_terms=("research article", "research"),
-        exclude_terms=("news & views",),
-    ),
-    JournalConfig(
-        name="Nature Methods",
-        url="https://www.nature.com/nmeth.rss",
-        base_url="https://www.nature.com",
-        include_terms=("research article", "research"),
-        exclude_terms=("news & views",),
-    ),
+    *NATURE_ARTICLE_LISTING_CONFIGS,
     JournalConfig(
         name="Genome Biology",
         url="https://genomebiology.biomedcentral.com/articles",
@@ -94,22 +113,8 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
     ),
     JournalConfig(
         name="Bioinformatics",
-        url="https://academic.oup.com/rss/site_5139/advanceAccess_3001.xml",
+        url="https://academic.oup.com/rss/site_5139/3001.xml",
         base_url="https://academic.oup.com",
-        include_terms=(),
-        exclude_terms=(),
-    ),
-    JournalConfig(
-        name="Nature Genetics",
-        url="https://www.nature.com/ng.rss",
-        base_url="https://www.nature.com",
-        include_terms=(),
-        exclude_terms=(),
-    ),
-    JournalConfig(
-        name="Nature Structural & Molecular Biology",
-        url="https://www.nature.com/nsmb.rss",
-        base_url="https://www.nature.com",
         include_terms=(),
         exclude_terms=(),
     ),
@@ -141,20 +146,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         include_terms=(),
         exclude_terms=(),
     ),
-    JournalConfig(
-        name="Nature Reviews Molecular Cell Biology",
-        url="https://www.nature.com/nrm.rss",
-        base_url="https://www.nature.com",
-        include_terms=(),
-        exclude_terms=(),
-    ),
-    JournalConfig(
-        name="Nature Reviews Genetics",
-        url="https://www.nature.com/nrg.rss",
-        base_url="https://www.nature.com",
-        include_terms=(),
-        exclude_terms=(),
-    ),
+    *NATURE_REVIEW_LISTING_CONFIGS,
     JournalConfig(
         name="Trends in Genetics",
         url="https://www.cell.com/trends/genetics/inpress.rss",

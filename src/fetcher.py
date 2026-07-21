@@ -9,7 +9,7 @@ def is_transient_error(exception: BaseException) -> bool:
     """Determine whether an exception should trigger a retry."""
     if isinstance(exception, exceptions.HTTPError):
         response = exception.response
-        if response and response.status_code in {403, 503}:
+        if response and response.status_code in {403, 429, 503}:
             return True
     return False
 

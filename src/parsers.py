@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 from xml.etree import ElementTree as ET
 
@@ -62,9 +62,25 @@ def attr_or_empty(tag: Tag, name: str) -> str:
 
 
 def parse_nature(html: str, config: JournalConfig) -> List[Article]:
-    """Extract article data from the Nature research page."""
+    """Extract every card from a Nature journal listing page."""
     soup = BeautifulSoup(html, "html.parser")
     cards = soup.select("article.c-card")
+    return _parse_nature_cards(cards, config)
+
+
+def parse_nature_article_listing(html: str, config: JournalConfig) -> List[Article]:
+    """Extract only cards explicitly labelled as Nature research Articles."""
+    soup = BeautifulSoup(html, "html.parser")
+    cards = [
+        card
+        for card in soup.select("article.c-card")
+        if text_or_empty(card.select_one("span.c-meta__type")) == "Article"
+    ]
+    return _parse_nature_cards(cards, config)
+
+
+def _parse_nature_cards(cards: List[Tag], config: JournalConfig) -> List[Article]:
+    """Convert selected Nature listing cards into article records."""
     articles: List[Article] = []
     for card in cards:
         title_tag = card.select_one("h3.c-card__title a")
@@ -347,6 +363,16 @@ def parse_rna(html: str, config: JournalConfig) -> List[Article]:
     return articles
 
 
+_NATURE_SKIP_PREFIXES = (
+    "Author Correction:",
+    "Publisher Correction:",
+    "Editorial Expression of Concern:",
+    "Editorial:",
+    "Daily briefing:",
+    "Reply to:",
+)
+
+
 def _parse_nature_rss(
     html: str, config: JournalConfig, min_creators: int
 ) -> List[Article]:
@@ -370,15 +396,6 @@ def _parse_nature_rss(
     except ET.ParseError:
         return []
 
-    _SKIP_PREFIXES = (
-        "Author Correction:",
-        "Publisher Correction:",
-        "Editorial Expression of Concern:",
-        "Editorial:",
-        "Daily briefing:",
-        "Reply to:",
-    )
-
     articles: List[Article] = []
     for item in root.findall("rss:item", ns):
         title_raw = (
@@ -387,7 +404,7 @@ def _parse_nature_rss(
             or ""
         ).strip()
         title = _HTML_TAG.sub(" ", title_raw).strip()
-        if any(title.startswith(prefix) for prefix in _SKIP_PREFIXES):
+        if any(title.startswith(prefix) for prefix in _NATURE_SKIP_PREFIXES):
             continue
 
         creators = item.findall("dc:creator", ns)
@@ -484,23 +501,25 @@ _OUP_SKIP_PREFIXES = (
 )
 
 
-def parse_oup_rss(xml: str, config: JournalConfig) -> List[Article]:
-    """Extract articles from OUP's RSS 2.0 feed (used by NAR, Briefings in Bioinformatics).
+def _parse_rss2(
+    xml: str, config: JournalConfig, skip_prefixes: Tuple[str, ...]
+) -> List[Article]:
+    """Extract articles from a plain RSS 2.0 feed.
 
-    OUP RSS lacks dc:creator and dc:type, so non-research items are filtered by
-    title prefix instead of by metadata.
+    Used for feeds that carry no dc:creator or dc:type metadata, so non-research
+    items can only be filtered by title prefix. Prefix matching is case-insensitive.
     """
     try:
         root = ET.fromstring(xml)
     except ET.ParseError:
         return []
 
+    lowered_prefixes = tuple(prefix.lower() for prefix in skip_prefixes)
     articles: List[Article] = []
     for item in root.findall("./channel/item"):
         title_raw = (item.findtext("title") or "").strip()
         title = _HTML_TAG.sub(" ", title_raw).strip()
-        lowered = title.lower()
-        if any(lowered.startswith(p.lower()) for p in _OUP_SKIP_PREFIXES):
+        if title.lower().startswith(lowered_prefixes):
             continue
 
         link = (item.findtext("link") or "").strip()
@@ -520,13 +539,39 @@ def parse_oup_rss(xml: str, config: JournalConfig) -> List[Article]:
     return articles
 
 
+def parse_oup_rss(xml: str, config: JournalConfig) -> List[Article]:
+    """Extract articles from OUP's RSS 2.0 feed (used by NAR, Briefings, Bioinformatics).
+
+    OUP RSS lacks dc:creator and dc:type, so non-research items are filtered by
+    title prefix instead of by metadata.
+    """
+    return _parse_rss2(xml, config, _OUP_SKIP_PREFIXES)
+
+
+def parse_nature_subject_rss(xml: str, config: JournalConfig) -> List[Article]:
+    """Extract articles from a Nature per-subject RSS 2.0 feed.
+
+    Nature's per-journal feeds are capped at eight items, which is under a day of
+    output for Nature Communications. The per-subject feeds hold thirty items each,
+    so several are unioned per journal and deduplicated by link in build_feed.
+
+    These feeds carry no dc:creator, so the creator-count heuristic used for the
+    RDF feeds does not apply, and no description, so items have no abstract.
+    """
+    return _parse_rss2(xml, config, _NATURE_SKIP_PREFIXES)
+
+
 PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
+    "nature_html": parse_nature,
+    "nature_article_html": parse_nature_article_listing,
+    "nature_rss": parse_nature_rss,
+    "nature_review_rss": parse_nature_review_rss,
     "Cell": parse_cell_rss,
     "Nature": parse_nature_rss,
     "Science": parse_science_rss,
     "Molecular Cell": parse_cell_rss,
     "Nature Cell Biology": parse_nature_rss,
-    "Nature Communications": parse_nature_rss,
+    "Nature Communications": parse_nature_subject_rss,
     "Nature Biotechnology": parse_nature_rss,
     "Nature Methods": parse_nature_rss,
     "Genome Biology": parse_genome_biology,
@@ -549,7 +594,7 @@ PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
 
 def parse_journal(html: str, config: JournalConfig) -> List[Article]:
     """Parse the journal page using the CSS-based parser for that journal."""
-    parser = PARSER_MAP.get(config.name)
+    parser = PARSER_MAP.get(config.parser_key or config.name)
     if not parser:
         return []
     candidates = parser(html, config)

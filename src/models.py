@@ -34,3 +34,6 @@ class JournalConfig:
     base_url: str
     include_terms: Tuple[str, ...]
     exclude_terms: Tuple[str, ...]
+    parser_key: Optional[str] = None
+    fallback_url: Optional[str] = None
+    fallback_parser_key: Optional[str] = None
