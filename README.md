@@ -24,12 +24,13 @@ https://mahoon2.github.io/custom_rss_feed/ReviewsFeed.xml
 
 ## How it works
 
-`src/main.py` fetches each journal's source, parses it into `Article` objects, and serializes three RSS 2.0 files via `rfeed`. Two parsing strategies are used depending on the publisher:
+`src/main.py` fetches each journal's source, parses it into `Article` objects, and serializes five RSS 2.0 files via `rfeed`. Two parsing strategies are used depending on the publisher:
 
 - **HTML scraping** (Genome Biology, Genome Research, RNA, The EMBO Journal): CSS selectors target article cards on each journal's "current/all articles" page. Genome Research groups article cards under section headings and keeps the Research, Methods, and Resource sections; RNA keeps every citation because its table-of-contents sections are all research; Genome Biology and The EMBO Journal share a Springer/BMC card layout and filter by article type (`Research` for Genome Biology; Article, Resource, Method, and Report for The EMBO Journal).
-- **RSS 1.0/RDF feed** (Cell, Molecular Cell, Cell Genomics, Trends in Genetics, Trends in Cell Biology, Nature, Nature Cell Biology, Nature Communications, Nature Biotechnology, Nature Methods, Nature Genetics, Nature Structural & Molecular Biology, Nature Reviews Molecular Cell Biology, Nature Reviews Genetics, Science, Science Advances): Official RSS feeds are consumed directly, bypassing JavaScript-rendered pages and Cloudflare challenges. Cell-family research feeds filter by `prism:section` to keep only `Article`, `Short article`, and `Resource` (excluding Reviews, Perspectives, Editorials, Corrections, etc.). Nature research feeds filter non-research items by title prefix and by requiring two or more `dc:creator` tags (single-author entries are typically News or Perspectives). Science and Science Advances e-TOC feeds filter by `dc:type == "Research Article"`.
-- **Review feeds**: The Reviews feed uses relaxed filters so review-type content survives. The Trends feeds (Cell family) keep every `prism:section` except editorial and correction notices, and the Nature Reviews feeds admit single-author reviews (requiring only one `dc:creator`).
-- **RSS 2.0 feed** (Nucleic Acids Research, Briefings in Bioinformatics, Bioinformatics): OUP's per-issue and advance-access RSS feeds are consumed directly. Because OUP RSS lacks `dc:creator` and `dc:type` fields, non-research items (errata, editorials, letters) are filtered by title prefix.
+- **Nature current listings with RSS fallback** (Nature Communications, Nature Cell Biology, Nature Biotechnology, Nature Methods, Nature Genetics, Nature Structural & Molecular Biology, Nature Reviews Molecular Cell Biology, Nature Reviews Genetics): The primary source is each journal's current article listing, which currently exposes twenty cards and avoids the eight-item cap imposed by the corresponding RSS feeds. The research journals request `type=article`; the Nature Reviews journals retain every card in their current listing. If Nature blocks the listing or returns no cards, the generator falls back to the official RSS endpoint and prints a warning. That fallback is intentionally incomplete.
+- **RSS 1.0/RDF feed** (Cell, Molecular Cell, Cell Genomics, Trends in Genetics, Trends in Cell Biology, Nature, Science, Science Advances): Official RSS feeds are consumed directly. Cell-family research feeds filter by `prism:section` to keep only `Article`, `Short article`, and `Resource` (excluding Reviews, Perspectives, Editorials, Corrections, etc.). Nature filters non-research items by title prefix and by requiring two or more `dc:creator` tags (single-author entries are typically News or Perspectives). Science and Science Advances e-TOC feeds filter by `dc:type == "Research Article"`.
+- **Review feeds**: The Trends feeds (Cell family) keep every `prism:section` except editorial and correction notices. The Nature Reviews listings keep all current cards, including Review Articles, Journal Club, editorial, correspondence, and Tools of the Trade.
+- **RSS 2.0 feed** (Nucleic Acids Research, Briefings in Bioinformatics, Bioinformatics): OUP's current-issue RSS feeds are consumed directly. Because OUP RSS lacks `dc:creator` and `dc:type` fields, non-research items (errata, editorials, letters) are filtered by title prefix. OUP's `advanceAccess_` variants are avoided: they return only a handful of items and go stale (Briefings' advance-access feed still serves 2023 content).
 
 Requests are made with `curl_cffi` (TLS fingerprint impersonation) and retried up to five times on transient HTTP errors.
 
@@ -47,7 +48,7 @@ uv sync          # or: pip install -r requirements.txt
 python src/main.py
 ```
 
-Writes `CNSFeed.xml`, `MolCellFeed.xml`, and `MethodFeed.xml` to the repository root.
+Writes `CNSFeed.xml`, `MolCellFeed.xml`, `MethodFeed.xml`, `GenomicsFeed.xml`, and `ReviewsFeed.xml` to the repository root.
 
 ## Deployment
 
