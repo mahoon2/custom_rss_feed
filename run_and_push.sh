@@ -21,7 +21,7 @@ if ! python src/main.py; then
 fi
 
 echo "Staging feed files..."
-git add CNSFeed.xml MolCellFeed.xml MethodFeed.xml
+git add ./*Feed.xml
 
 if git diff --cached --quiet; then
   echo "No changes detected in generated *.xml files; nothing to commit."

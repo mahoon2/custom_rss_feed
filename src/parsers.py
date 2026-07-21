@@ -129,15 +129,18 @@ def parse_science(html: str, config: JournalConfig) -> List[Article]:
 
 
 _CELL_RESEARCH_SECTIONS = frozenset({"Article", "Short article", "Resource"})
+_CELL_REVIEW_SKIP_SECTIONS = frozenset(
+    {"Editorial", "Correction", "Erratum", "Retraction", "Preview"}
+)
 
 
-def parse_cell_rss(xml: str, config: JournalConfig) -> List[Article]:
-    """Extract research articles from Cell's RSS 1.0 (RDF) in-press feed.
+def _parse_cell_rss(
+    xml: str, config: JournalConfig, keep_section: Callable[[str], bool]
+) -> List[Article]:
+    """Extract items from a Cell-family RSS 1.0 (RDF) feed.
 
-    Filters on prism:section to keep only primary research (Article, Short
-    article, Resource), excluding Reviews, Perspectives, Editorials, Previews,
-    Commentaries, SnapShots, Spotlights, Voices, Stories, and Corrections that
-    share the same feed.
+    keep_section decides which prism:section values to include, letting the same
+    parser serve research feeds (an allow-list) and review feeds (a skip-list).
     """
     ns = {
         "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -153,7 +156,7 @@ def parse_cell_rss(xml: str, config: JournalConfig) -> List[Article]:
     articles: List[Article] = []
     for item in root.findall("rss:item", ns):
         section = (item.findtext("prism:section", namespaces=ns) or "").strip()
-        if section not in _CELL_RESEARCH_SECTIONS:
+        if not keep_section(section):
             continue
 
         title_raw = (
@@ -180,6 +183,29 @@ def parse_cell_rss(xml: str, config: JournalConfig) -> List[Article]:
             )
         )
     return articles
+
+
+def parse_cell_rss(xml: str, config: JournalConfig) -> List[Article]:
+    """Extract research articles from a Cell-family in-press RSS feed.
+
+    Keeps only primary research (Article, Short article, Resource), excluding
+    Reviews, Perspectives, Editorials, Previews, Commentaries, and Corrections
+    that share the same feed.
+    """
+    return _parse_cell_rss(
+        xml, config, lambda section: section in _CELL_RESEARCH_SECTIONS
+    )
+
+
+def parse_cell_review_rss(xml: str, config: JournalConfig) -> List[Article]:
+    """Extract review content from a Cell-family feed (e.g. Trends journals).
+
+    Keeps every section (Review, Feature Review, Opinion, Forum, Spotlight,
+    Science & Society, ...) except editorial and correction notices.
+    """
+    return _parse_cell_rss(
+        xml, config, lambda section: section not in _CELL_REVIEW_SKIP_SECTIONS
+    )
 
 
 def parse_genome_biology(html: str, config: JournalConfig) -> List[Article]:
@@ -218,6 +244,19 @@ def parse_genome_biology(html: str, config: JournalConfig) -> List[Article]:
     return articles
 
 
+def _cshl_toc_date(item: Tag) -> str:
+    """Extract the publication date string from a CSHL/HighWire TOC citation."""
+    ahead_tag = item.select_one("span.cit-ahead-of-print-date")
+    if ahead_tag:
+        return " ".join(
+            t.strip()
+            for t in ahead_tag.strings
+            if t.strip() and t.strip() not in ("Published in Advance", ",")
+        )
+    print_tag = item.select_one("span.cit-print-date")
+    return text_or_empty(print_tag)
+
+
 def parse_genome_research(html: str, config: JournalConfig) -> List[Article]:
     """Extract research article data from the Genome Research current issue page."""
     soup = BeautifulSoup(html, "html.parser")
@@ -230,34 +269,58 @@ def parse_genome_research(html: str, config: JournalConfig) -> List[Article]:
             link_tag = item.select_one("div.cit-extra a[rel='abstract']")
             if not link_tag:
                 continue
-            ahead_tag = item.select_one("span.cit-ahead-of-print-date")
-            if ahead_tag:
-                date_str = " ".join(
-                    t.strip()
-                    for t in ahead_tag.strings
-                    if t.strip() and t.strip() not in ("Published in Advance", ",")
-                )
-            else:
-                print_tag = item.select_one("span.cit-print-date")
-                date_str = text_or_empty(print_tag)
             articles.append(
                 Article(
                     title=title_tag.get_text(" ", strip=True),
                     link=urljoin(config.base_url, attr_or_empty(link_tag, "href")),
                     summary="",
-                    published=parse_date(date_str),
+                    published=parse_date(_cshl_toc_date(item)),
                     source=config.name,
                 )
             )
     return articles
 
 
-def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
+def parse_rna(html: str, config: JournalConfig) -> List[Article]:
+    """Extract research articles from the RNA journal current issue page.
+
+    RNA is on the same CSHL/HighWire platform as Genome Research, but its TOC
+    sections are all research (Communications, RNA and Gene Expression, ...), so
+    every citation is kept, and the article link is the full-text anchor rather
+    than an abstract anchor.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    articles: List[Article] = []
+    for item in soup.select("li.toc-cit"):
+        title_tag = item.select_one("h4.cit-title-group")
+        if not title_tag:
+            continue
+        link_tag = item.select_one("div.cit-extra a[rel='full-text']")
+        if not link_tag:
+            continue
+        articles.append(
+            Article(
+                title=title_tag.get_text(" ", strip=True),
+                link=urljoin(config.base_url, attr_or_empty(link_tag, "href")),
+                summary="",
+                published=parse_date(_cshl_toc_date(item)),
+                source=config.name,
+            )
+        )
+    return articles
+
+
+def _parse_nature_rss(
+    html: str, config: JournalConfig, min_creators: int
+) -> List[Article]:
     """Extract article data from Nature's official RSS 1.0 (RDF) feed.
 
     Nature.com research-article pages now return a JavaScript challenge page
     that cannot be solved by HTTP-only clients. The official RSS feeds remain
-    accessible and contain the same article metadata.
+    accessible and contain the same article metadata. min_creators is the
+    minimum dc:creator count required to keep an item: research feeds use two
+    (single-author entries are typically News & Views), while review feeds use
+    one to admit single-author reviews.
     """
     ns = {
         "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -291,7 +354,7 @@ def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
             continue
 
         creators = item.findall("dc:creator", ns)
-        if len(creators) < 2:
+        if len(creators) < min_creators:
             continue
 
         link = item.findtext("rss:link", namespaces=ns) or ""
@@ -311,6 +374,24 @@ def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
             )
         )
     return articles
+
+
+def parse_nature_rss(html: str, config: JournalConfig) -> List[Article]:
+    """Extract research articles from a Nature-family RSS feed.
+
+    Requires two or more dc:creator tags, since single-author entries are
+    typically News & Views or other non-research content.
+    """
+    return _parse_nature_rss(html, config, min_creators=2)
+
+
+def parse_nature_review_rss(html: str, config: JournalConfig) -> List[Article]:
+    """Extract content from a Nature Reviews RSS feed.
+
+    Keeps single-author reviews (min_creators=1) while still dropping the
+    correction and editorial notices handled by the shared skip-prefix filter.
+    """
+    return _parse_nature_rss(html, config, min_creators=1)
 
 
 def parse_science_rss(xml: str, config: JournalConfig) -> List[Article]:
@@ -416,6 +497,15 @@ PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "Nucleic Acids Research": parse_oup_rss,
     "Briefings in Bioinformatics": parse_oup_rss,
     "Bioinformatics": parse_oup_rss,
+    "Nature Genetics": parse_nature_rss,
+    "Nature Structural & Molecular Biology": parse_nature_rss,
+    "Cell Genomics": parse_cell_rss,
+    "Science Advances": parse_science_rss,
+    "RNA": parse_rna,
+    "Nature Reviews Molecular Cell Biology": parse_nature_review_rss,
+    "Nature Reviews Genetics": parse_nature_review_rss,
+    "Trends in Genetics": parse_cell_review_rss,
+    "Trends in Cell Biology": parse_cell_review_rss,
 }
 
 
