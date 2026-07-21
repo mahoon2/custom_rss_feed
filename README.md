@@ -6,9 +6,9 @@ Aggregates the latest articles from twenty-three journals into five curated RSS 
 
 | Feed | File | Journals |
 |---|---|---|
-| CNS Feed | `CNSFeed.xml` | Cell, Nature, Science, Science Advances |
-| Molecular & Cell Biology Feed | `MolCellFeed.xml` | Molecular Cell, Nature Cell Biology, Nature Communications, Nature Structural & Molecular Biology, The EMBO Journal, RNA |
-| Genomics Feed | `GenomicsFeed.xml` | Nature Genetics, Cell Genomics, Genome Biology, Genome Research, Nucleic Acids Research |
+| CNS Feed | `CNSFeed.xml` | Cell, Nature, Science |
+| Molecular & Cell Biology Feed | `MolCellFeed.xml` | Molecular Cell, Nature Cell Biology, Nature Communications, Nature Structural & Molecular Biology, Science Advances, The EMBO Journal |
+| Genomics Feed | `GenomicsFeed.xml` | Nature Genetics, Cell Genomics, Genome Biology, Genome Research, Nucleic Acids Research, RNA |
 | Methodology Feed | `MethodFeed.xml` | Nature Biotechnology, Nature Methods, Briefings in Bioinformatics, Bioinformatics |
 | Reviews Feed | `ReviewsFeed.xml` | Nature Reviews Molecular Cell Biology, Nature Reviews Genetics, Trends in Genetics, Trends in Cell Biology |
 

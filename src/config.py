@@ -168,14 +168,14 @@ BASE_GITHUB_URL: str = "https://mahoon2.github.io/custom_rss_feed"
 FEED_CONFIGS: Tuple[FeedConfig, ...] = (
     FeedConfig(
         title="CNS Feed",
-        description="Aggregated research articles from Cell, Nature, Science, and Science Advances.",
+        description="Aggregated research articles from Cell, Nature, and Science.",
         output_file="CNSFeed.xml",
         link=f"{BASE_GITHUB_URL}/CNSFeed.xml",
-        journal_names=("Cell", "Nature", "Science", "Science Advances"),
+        journal_names=("Cell", "Nature", "Science"),
     ),
     FeedConfig(
         title="Molecular & Cell Biology Feed",
-        description="Aggregated research articles from Nature Cell Biology, Nature Communications, Molecular Cell, Nature Structural & Molecular Biology, The EMBO Journal, and RNA.",
+        description="Aggregated research articles from Nature Cell Biology, Nature Communications, Molecular Cell, Nature Structural & Molecular Biology, Science Advances, and The EMBO Journal.",
         output_file="MolCellFeed.xml",
         link=f"{BASE_GITHUB_URL}/MolCellFeed.xml",
         journal_names=(
@@ -183,8 +183,8 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
             "Nature Communications",
             "Molecular Cell",
             "Nature Structural & Molecular Biology",
+            "Science Advances",
             "The EMBO Journal",
-            "RNA",
         ),
     ),
     FeedConfig(
@@ -201,7 +201,7 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
     ),
     FeedConfig(
         title="Genomics Feed",
-        description="Aggregated research articles from Nature Genetics, Cell Genomics, Genome Biology, Genome Research, and Nucleic Acids Research.",
+        description="Aggregated research articles from Nature Genetics, Cell Genomics, Genome Biology, Genome Research, Nucleic Acids Research, and RNA.",
         output_file="GenomicsFeed.xml",
         link=f"{BASE_GITHUB_URL}/GenomicsFeed.xml",
         journal_names=(
@@ -210,6 +210,7 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
             "Genome Biology",
             "Genome Research",
             "Nucleic Acids Research",
+            "RNA",
         ),
     ),
     FeedConfig(
