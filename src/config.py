@@ -121,6 +121,13 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         exclude_terms=(),
     ),
     JournalConfig(
+        name="The EMBO Journal",
+        url="https://link.springer.com/journal/44318/articles",
+        base_url="https://link.springer.com",
+        include_terms=(),
+        exclude_terms=(),
+    ),
+    JournalConfig(
         name="Science Advances",
         url="https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=sciadv",
         base_url="https://www.science.org",
@@ -176,7 +183,7 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
     ),
     FeedConfig(
         title="Molecular & Cell Biology Feed",
-        description="Aggregated research articles from Nature Cell Biology, Nature Communications, Molecular Cell, Nature Structural & Molecular Biology, and RNA.",
+        description="Aggregated research articles from Nature Cell Biology, Nature Communications, Molecular Cell, Nature Structural & Molecular Biology, The EMBO Journal, and RNA.",
         output_file="MolCellFeed.xml",
         link=f"{BASE_GITHUB_URL}/MolCellFeed.xml",
         journal_names=(
@@ -184,6 +191,7 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
             "Nature Communications",
             "Molecular Cell",
             "Nature Structural & Molecular Biology",
+            "The EMBO Journal",
             "RNA",
         ),
     ),

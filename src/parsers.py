@@ -208,8 +208,14 @@ def parse_cell_review_rss(xml: str, config: JournalConfig) -> List[Article]:
     )
 
 
-def parse_genome_biology(html: str, config: JournalConfig) -> List[Article]:
-    """Extract research article data from the Genome Biology articles page."""
+def _parse_springer_listing(
+    html: str, config: JournalConfig, keep_type: Callable[[str], bool]
+) -> List[Article]:
+    """Extract article cards from a Springer/BMC 'all articles' listing page.
+
+    keep_type decides which c-meta__type values to include, letting the same
+    scraper serve Genome Biology (BMC) and The EMBO Journal (link.springer.com).
+    """
     soup = BeautifulSoup(html, "html.parser")
     listing = soup.find(attrs={"data-test": "article-listing"})
     if not listing:
@@ -218,7 +224,7 @@ def parse_genome_biology(html: str, config: JournalConfig) -> List[Article]:
     articles: List[Article] = []
     for card in listing.find_all("article", class_="app-card-open"):
         type_tag = card.find("span", class_="c-meta__type")
-        if not type_tag or type_tag.get_text(strip=True).lower() != "research":
+        if not type_tag or not keep_type(type_tag.get_text(strip=True)):
             continue
         heading = card.find("h2", class_="app-card-open__heading")
         if not heading:
@@ -242,6 +248,25 @@ def parse_genome_biology(html: str, config: JournalConfig) -> List[Article]:
             )
         )
     return articles
+
+
+_EMBO_RESEARCH_TYPES = frozenset(
+    {"Article", "Resource", "Method", "Report", "Short Report"}
+)
+
+
+def parse_genome_biology(html: str, config: JournalConfig) -> List[Article]:
+    """Extract research article data from the Genome Biology articles page."""
+    return _parse_springer_listing(html, config, lambda t: t.lower() == "research")
+
+
+def parse_embo(html: str, config: JournalConfig) -> List[Article]:
+    """Extract research articles from The EMBO Journal articles page (Springer).
+
+    Keeps primary research types (Article, Resource, Method, Report), excluding
+    Author Corrections, Comments, Reviews, Perspectives, and Obituaries.
+    """
+    return _parse_springer_listing(html, config, lambda t: t in _EMBO_RESEARCH_TYPES)
 
 
 def _cshl_toc_date(item: Tag) -> str:
@@ -506,6 +531,7 @@ PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "Nature Reviews Genetics": parse_nature_review_rss,
     "Trends in Genetics": parse_cell_review_rss,
     "Trends in Cell Biology": parse_cell_review_rss,
+    "The EMBO Journal": parse_embo,
 }
 
 
