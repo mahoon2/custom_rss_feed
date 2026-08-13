@@ -225,16 +225,30 @@ FEED_CONFIGS: Tuple[FeedConfig, ...] = (
     ),
     FeedConfig(
         title="Molecular & Cell Biology Feed",
-        description="Aggregated research articles from Nature Cell Biology, Nature Communications, Molecular Cell, Nature Structural & Molecular Biology, Science Advances, and The EMBO Journal.",
+        description="Aggregated research articles from Nature Cell Biology, Molecular Cell, Nature Structural & Molecular Biology, and The EMBO Journal.",
         output_file="MolCellFeed.xml",
         link=f"{BASE_GITHUB_URL}/MolCellFeed.xml",
         journal_names=(
             "Nature Cell Biology",
-            "Nature Communications",
             "Molecular Cell",
             "Nature Structural & Molecular Biology",
-            "Science Advances",
             "The EMBO Journal",
+        ),
+    ),
+    # Nature Communications and Science Advances publish 30-60 times what a
+    # selective journal does, so grouping them with one buries the other: they
+    # were 92% of the Molecular & Cell Biology feed's weekly flow against ~16
+    # articles per week for its four other journals combined. They are split off
+    # rather than capped, since a smaller window would drop articles between
+    # snapshots instead of merely reordering them.
+    FeedConfig(
+        title="Megajournal Feed",
+        description="Aggregated research articles from the multidisciplinary megajournals: Nature Communications, restricted to biological and health sciences, and Science Advances, which is not filtered by subject because no accessible source exposes one.",
+        output_file="MegajournalFeed.xml",
+        link=f"{BASE_GITHUB_URL}/MegajournalFeed.xml",
+        journal_names=(
+            "Nature Communications",
+            "Science Advances",
         ),
     ),
     FeedConfig(
