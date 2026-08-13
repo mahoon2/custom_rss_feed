@@ -1,5 +1,6 @@
 """Tests for Nature listing extraction and RSS fallback behavior."""
 
+import collections
 import sys
 import unittest
 from pathlib import Path
@@ -11,6 +12,7 @@ from config import (
     JOURNAL_CONFIGS,
     NATURE_ARTICLE_LISTING_CONFIGS,
     NATURE_SUBJECT_LISTING_CONFIGS,
+    NATURE_SUBJECT_PAGES,
 )
 from main import fetch_and_parse
 from models import Article, JournalConfig
@@ -87,9 +89,31 @@ class NatureCommunicationsScopeTests(unittest.TestCase):
     def test_uses_biological_and_health_sciences(self) -> None:
         """Cover both subjects, since Nature files biomedicine under health."""
         urls = [config.url for config in NATURE_SUBJECT_LISTING_CONFIGS]
-        self.assertEqual(len(urls), 2)
         self.assertTrue(any("biological-sciences" in url for url in urls))
         self.assertTrue(any("health-sciences" in url for url in urls))
+
+    def test_paginates_every_subject_to_the_same_depth(self) -> None:
+        """Fetch each subject to NATURE_SUBJECT_PAGES, with no page skipped.
+
+        A rolling listing loses whatever scrolls off between snapshots, so its
+        depth has to exceed the longest gap between runs. One page holds about
+        three days of this journal's biology output.
+        """
+        pages = collections.defaultdict(set)
+        for config in NATURE_SUBJECT_LISTING_CONFIGS:
+            subject, _, page = config.url.rpartition("/ncomms?page=")
+            pages[subject.rsplit("/", 1)[-1]].add(int(page))
+
+        expected = set(range(1, NATURE_SUBJECT_PAGES + 1))
+        self.assertEqual(set(pages), {"biological-sciences", "health-sciences"})
+        for subject, seen in pages.items():
+            with self.subTest(subject=subject):
+                self.assertEqual(seen, expected)
+
+    def test_every_source_is_distinct(self) -> None:
+        """Guard against a duplicated URL quietly halving the window."""
+        urls = [config.url for config in NATURE_SUBJECT_LISTING_CONFIGS]
+        self.assertEqual(len(urls), len(set(urls)))
 
     def test_sources_share_one_journal_name(self) -> None:
         """Union both listings under one name so main() merges them."""
@@ -109,7 +133,7 @@ class NatureCommunicationsScopeTests(unittest.TestCase):
     def test_is_not_also_fetched_as_an_unfiltered_listing(self) -> None:
         """Ensure the unfiltered ncomms listing was removed, not merely added to."""
         ncomms = [c for c in JOURNAL_CONFIGS if c.name == "Nature Communications"]
-        self.assertEqual(len(ncomms), 2)
+        self.assertEqual(len(ncomms), len(NATURE_SUBJECT_LISTING_CONFIGS))
         for config in ncomms:
             with self.subTest(url=config.url):
                 self.assertIn("/subjects/", config.url)

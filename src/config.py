@@ -42,14 +42,23 @@ NATURE_ARTICLE_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
 # biological sciences because Nature files cancer biology, immunology, and
 # infection under the former; filtering on biology alone drops them.
 #
-# The two sources share a journal name, so main() unions them and build_feed
-# deduplicates the overlap by link. Neither declares a fallback: the journal's
+# All sources share a journal name, so main() unions them and build_feed
+# deduplicates the overlap by link. None declares a fallback: the journal's
 # RSS feed is unfiltered, so falling back to it would silently readmit exactly
 # the content this filter exists to remove.
+#
+# Each page holds 50 articles, roughly three days of this journal's biology
+# output. A rolling listing silently drops whatever scrolls off before the next
+# snapshot, so its depth has to exceed the longest gap between runs: the
+# 20-item listing used previously lost 44 of the 88 articles published over one
+# ten-day stretch. Two pages per subject carry about a week, against a longest
+# observed gap of six days. Consecutive pages do not overlap.
+NATURE_SUBJECT_PAGES: int = 2
+
 NATURE_SUBJECT_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
     JournalConfig(
         name="Nature Communications",
-        url=f"https://www.nature.com/subjects/{subject}/ncomms",
+        url=f"https://www.nature.com/subjects/{subject}/ncomms?page={page}",
         base_url="https://www.nature.com",
         include_terms=(),
         exclude_terms=(),
@@ -57,6 +66,7 @@ NATURE_SUBJECT_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
         link_pattern=r"nature\.com/articles/s41467-",
     )
     for subject in ("biological-sciences", "health-sciences")
+    for page in range(1, NATURE_SUBJECT_PAGES + 1)
 )
 
 NATURE_REVIEW_LISTING_CONFIGS: Tuple[JournalConfig, ...] = (
