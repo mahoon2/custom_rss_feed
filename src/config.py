@@ -75,7 +75,10 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.nature.com",
         include_terms=("research article", "research"),
         exclude_terms=("news & views",),
-        link_pattern=r"nature\.com/articles/[sd]41586-",
+        # Nature's news, Comment, Career, and World View content carries a d41586
+        # DOI prefix; only s41586 is a research article. nature.rss exposes no
+        # prism:section or dc:type, so the prefix is the only structural marker.
+        link_pattern=r"nature\.com/articles/s41586-",
     ),
     JournalConfig(
         name="Science",

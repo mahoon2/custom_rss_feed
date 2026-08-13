@@ -64,6 +64,19 @@ class MatchesJournalTests(unittest.TestCase):
         self.assertTrue(matches_journal(_article(NRM_LINK, nrm.name), nrm))
         self.assertFalse(matches_journal(_article(NRM_LINK, nrg.name), nrg))
 
+    def test_nature_rejects_news_doi_prefix(self) -> None:
+        """Exclude Nature's d41586 news content from the research feed.
+
+        nature.rss carries no prism:section or dc:type, so the DOI prefix is
+        the only structural marker separating research from News, Career,
+        Editorial, and World View items.
+        """
+        config = _config("Nature")
+        research = "https://www.nature.com/articles/s41586-026-01234-5"
+        news = "https://www.nature.com/articles/d41586-026-01234-5"
+        self.assertTrue(matches_journal(_article(research, "Nature"), config))
+        self.assertFalse(matches_journal(_article(news, "Nature"), config))
+
     def test_unpatterned_journal_is_not_checked(self) -> None:
         """Accept every link when the journal configures no pattern."""
         config = JournalConfig(
