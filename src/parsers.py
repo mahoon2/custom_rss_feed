@@ -79,6 +79,45 @@ def parse_nature_article_listing(html: str, config: JournalConfig) -> List[Artic
     return _parse_nature_cards(cards, config)
 
 
+def parse_nature_subject_listing(html: str, config: JournalConfig) -> List[Article]:
+    """Extract research Articles from a nature.com per-subject journal listing.
+
+    Multidisciplinary journals publish far outside this project's scope: only
+    about 65% of Nature Communications is biological or health science, the rest
+    being condensed-matter physics, catalysis, atmospheric science, and machine
+    learning. Nature's own subject taxonomy is the only structural way to
+    separate them, and it lives on ``/subjects/<subject>/<journal>`` rather than
+    in any feed or on the main listing, whose cards carry no subject at all.
+
+    These pages predate the ``c-card`` layout used elsewhere, so the markup is
+    matched separately. Cards are kept only when explicitly typed ``Article``,
+    which drops the Comment and Review Article entries these listings mix in.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    articles: List[Article] = []
+    for card in soup.find_all("article"):
+        type_tag = card.select_one('span[data-test="article.type"]')
+        if not type_tag or type_tag.get_text(strip=True) != "Article":
+            continue
+        title_tag = card.select_one('h3 a[href^="/articles/"]')
+        if not title_tag:
+            continue
+        time_tag = card.select_one('time[itemprop="datePublished"]')
+        summary_tag = card.select_one('div[itemprop="description"] p')
+        articles.append(
+            Article(
+                title=text_or_empty(title_tag),
+                link=urljoin(config.base_url, attr_or_empty(title_tag, "href")),
+                summary=text_or_empty(summary_tag),
+                published=parse_date(attr_or_empty(time_tag, "datetime"))
+                if time_tag
+                else None,
+                source=config.name,
+            )
+        )
+    return articles
+
+
 def _parse_nature_cards(cards: List[Tag], config: JournalConfig) -> List[Article]:
     """Convert selected Nature listing cards into article records."""
     articles: List[Article] = []
@@ -564,6 +603,7 @@ def parse_nature_subject_rss(xml: str, config: JournalConfig) -> List[Article]:
 PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "nature_html": parse_nature,
     "nature_article_html": parse_nature_article_listing,
+    "nature_subject_html": parse_nature_subject_listing,
     "nature_rss": parse_nature_rss,
     "nature_review_rss": parse_nature_review_rss,
     "Cell": parse_cell_rss,

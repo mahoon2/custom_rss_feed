@@ -7,10 +7,112 @@ from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from config import NATURE_ARTICLE_LISTING_CONFIGS
+from config import (
+    JOURNAL_CONFIGS,
+    NATURE_ARTICLE_LISTING_CONFIGS,
+    NATURE_SUBJECT_LISTING_CONFIGS,
+)
 from main import fetch_and_parse
 from models import Article, JournalConfig
-from parsers import parse_nature, parse_nature_article_listing
+from parsers import (
+    parse_nature,
+    parse_nature_article_listing,
+    parse_nature_subject_listing,
+)
+
+SUBJECT_CARD = """
+<article>
+  <div class="cleared" itemscope itemtype="http://schema.org/ScholarlyArticle">
+    <p><span data-test="article.type">{type}</span>
+       <time datetime="2026-08-13" itemprop="datePublished">13 August 2026</time></p>
+    <h3 itemprop="name headline">
+      <a href="/articles/{doi}" itemprop="url">{title}</a>
+    </h3>
+    <div itemprop="description"><p>{summary}</p></div>
+  </div>
+</article>
+"""
+
+
+class NatureSubjectListingTests(unittest.TestCase):
+    """Verify the per-subject listing used to keep Nature Communications on topic."""
+
+    def setUp(self) -> None:
+        """Use the production biological-sciences configuration."""
+        self.config = NATURE_SUBJECT_LISTING_CONFIGS[0]
+
+    def test_extracts_a_complete_article_record(self) -> None:
+        """Read title, link, summary, and date from a subject-listing card."""
+        html = SUBJECT_CARD.format(
+            type="Article",
+            doi="s41467-026-76678-y",
+            title="Hypothalamic prolactin receptor neurons",
+            summary="Authors find PRLR neurons regulate metabolism.",
+        )
+
+        articles = parse_nature_subject_listing(html, self.config)
+
+        self.assertEqual(len(articles), 1)
+        self.assertEqual(articles[0].title, "Hypothalamic prolactin receptor neurons")
+        self.assertEqual(
+            articles[0].link, "https://www.nature.com/articles/s41467-026-76678-y"
+        )
+        self.assertEqual(
+            articles[0].summary, "Authors find PRLR neurons regulate metabolism."
+        )
+        self.assertIsNotNone(articles[0].published)
+        self.assertEqual(articles[0].source, "Nature Communications")
+
+    def test_keeps_only_cards_typed_article(self) -> None:
+        """Drop the Comment and Review Article entries these listings mix in.
+
+        Both were present on the live pages: a Comment on biological sciences
+        and a Review Article on health sciences.
+        """
+        html = "".join(
+            SUBJECT_CARD.format(
+                type=t, doi=f"s41467-026-0000{i}-x", title=t, summary=""
+            )
+            for i, t in enumerate(("Article", "Comment", "Review Article"))
+        )
+
+        articles = parse_nature_subject_listing(html, self.config)
+
+        self.assertEqual([article.title for article in articles], ["Article"])
+
+
+class NatureCommunicationsScopeTests(unittest.TestCase):
+    """Verify Nature Communications is drawn from both biology subject listings."""
+
+    def test_uses_biological_and_health_sciences(self) -> None:
+        """Cover both subjects, since Nature files biomedicine under health."""
+        urls = [config.url for config in NATURE_SUBJECT_LISTING_CONFIGS]
+        self.assertEqual(len(urls), 2)
+        self.assertTrue(any("biological-sciences" in url for url in urls))
+        self.assertTrue(any("health-sciences" in url for url in urls))
+
+    def test_sources_share_one_journal_name(self) -> None:
+        """Union both listings under one name so main() merges them."""
+        names = {config.name for config in NATURE_SUBJECT_LISTING_CONFIGS}
+        self.assertEqual(names, {"Nature Communications"})
+
+    def test_declares_no_fallback(self) -> None:
+        """Keep the unfiltered RSS feed out of a subject-filtered source.
+
+        Falling back to ncomms.rss would readmit the physics and chemistry the
+        subject listings exist to exclude.
+        """
+        for config in NATURE_SUBJECT_LISTING_CONFIGS:
+            with self.subTest(url=config.url):
+                self.assertIsNone(config.fallback_url)
+
+    def test_is_not_also_fetched_as_an_unfiltered_listing(self) -> None:
+        """Ensure the unfiltered ncomms listing was removed, not merely added to."""
+        ncomms = [c for c in JOURNAL_CONFIGS if c.name == "Nature Communications"]
+        self.assertEqual(len(ncomms), 2)
+        for config in ncomms:
+            with self.subTest(url=config.url):
+                self.assertIn("/subjects/", config.url)
 
 
 class NatureSourceTests(unittest.TestCase):

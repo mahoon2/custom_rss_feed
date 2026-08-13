@@ -13,7 +13,6 @@ TRUST_HEADERS: Dict[str, str] = {
 # is otherwise indistinguishable from a correct one.
 NATURE_ARTICLE_JOURNALS: Tuple[Tuple[str, str, str], ...] = (
     ("Nature Cell Biology", "ncb", "s41556"),
-    ("Nature Communications", "ncomms", "s41467"),
     ("Nature Biotechnology", "nbt", "s41587"),
     ("Nature Methods", "nmeth", "s41592"),
     ("Nature Genetics", "ng", "s41588"),
@@ -33,6 +32,31 @@ NATURE_ARTICLE_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
         link_pattern=rf"nature\.com/articles/{doi}-",
     )
     for name, code, doi in NATURE_ARTICLE_JOURNALS
+)
+
+# Nature Communications is multidisciplinary: only about 65% of its output is
+# biological or health science. Its subject listings are the only structural
+# way to separate that from the condensed-matter physics, catalysis, and
+# atmospheric science it also publishes, since neither its RSS feed nor its
+# main listing carries a subject anywhere. Health sciences is needed alongside
+# biological sciences because Nature files cancer biology, immunology, and
+# infection under the former; filtering on biology alone drops them.
+#
+# The two sources share a journal name, so main() unions them and build_feed
+# deduplicates the overlap by link. Neither declares a fallback: the journal's
+# RSS feed is unfiltered, so falling back to it would silently readmit exactly
+# the content this filter exists to remove.
+NATURE_SUBJECT_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
+    JournalConfig(
+        name="Nature Communications",
+        url=f"https://www.nature.com/subjects/{subject}/ncomms",
+        base_url="https://www.nature.com",
+        include_terms=(),
+        exclude_terms=(),
+        parser_key="nature_subject_html",
+        link_pattern=r"nature\.com/articles/s41467-",
+    )
+    for subject in ("biological-sciences", "health-sciences")
 )
 
 NATURE_REVIEW_LISTING_CONFIGS: Tuple[JournalConfig, ...] = (
@@ -97,6 +121,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         link_pattern=r"cell\.com/molecular-cell/",
     ),
     *NATURE_ARTICLE_LISTING_CONFIGS,
+    *NATURE_SUBJECT_LISTING_CONFIGS,
     JournalConfig(
         name="Genome Biology",
         url="https://genomebiology.biomedcentral.com/articles",
