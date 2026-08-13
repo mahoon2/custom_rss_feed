@@ -52,6 +52,10 @@ def main() -> None:
     than aborting the run, so one publisher's outage cannot freeze every feed.
     A feed that would come out empty is left untouched instead: an empty file
     would overwrite the last good copy with nothing.
+
+    A journal may be configured more than once, as Nature Communications is
+    across two subject listings. Those sources are unioned under the shared
+    name, so one failing leaves the journal present rather than missing.
     """
     articles_by_journal: Dict[str, List[Article]] = {}
     failed: List[str] = []
@@ -76,14 +80,22 @@ def main() -> None:
             continue
         feed_content = build_feed(articles, feed_config)
         Path(feed_config.output_file).write_text(feed_content, encoding="utf-8")
-        missing = [n for n in feed_config.journal_names if n in failed]
+        missing = [
+            n
+            for n in feed_config.journal_names
+            if n in failed and not articles_by_journal.get(n)
+        ]
         note = f"; missing {', '.join(missing)}" if missing else ""
         print(f"Wrote {feed_config.output_file} ({len(articles)} articles{note}).")
 
-    if failed:
+    partial = sorted({n for n in failed if articles_by_journal.get(n)})
+    dropped = sorted({n for n in failed if not articles_by_journal.get(n)})
+    if dropped:
         print(
-            f"\nWARNING: {len(failed)} journal(s) skipped this run: {', '.join(failed)}"
+            f"\nWARNING: {len(dropped)} journal(s) absent this run: {', '.join(dropped)}"
         )
+    if partial:
+        print(f"WARNING: {len(partial)} journal(s) lost a source: {', '.join(partial)}")
 
 
 if __name__ == "__main__":
