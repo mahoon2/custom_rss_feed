@@ -5,3 +5,4 @@ __pycache__/
 debug_*.html
 *_log.txt
 log/
+analysis/
