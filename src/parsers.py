@@ -82,12 +82,13 @@ def parse_nature_article_listing(html: str, config: JournalConfig) -> List[Artic
 def parse_nature_subject_listing(html: str, config: JournalConfig) -> List[Article]:
     """Extract research Articles from a nature.com per-subject journal listing.
 
-    Multidisciplinary journals publish far outside this project's scope: only
-    about 65% of Nature Communications is biological or health science, the rest
-    being condensed-matter physics, catalysis, atmospheric science, and machine
-    learning. Nature's own subject taxonomy is the only structural way to
-    separate them, and it lives on ``/subjects/<subject>/<journal>`` rather than
-    in any feed or on the main listing, whose cards carry no subject at all.
+    Multidisciplinary journals publish far outside this project's scope: about
+    65% of Nature Communications and 48% of Nature is biological or health
+    science, the rest being condensed-matter physics, astronomy, catalysis,
+    atmospheric science, and machine learning. Nature's own subject taxonomy is
+    the only structural way to separate them, and it lives on
+    ``/subjects/<subject>/<journal>`` rather than in any feed or on the main
+    listing, whose cards carry no subject at all.
 
     These pages predate the ``c-card`` layout used elsewhere, so the markup is
     matched separately. Cards are kept only when explicitly typed ``Article``,
