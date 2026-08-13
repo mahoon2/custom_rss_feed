@@ -34,38 +34,51 @@ NATURE_ARTICLE_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
     for name, code, doi in NATURE_ARTICLE_JOURNALS
 )
 
-# Nature Communications is multidisciplinary: only about 65% of its output is
-# biological or health science. Its subject listings are the only structural
-# way to separate that from the condensed-matter physics, catalysis, and
-# atmospheric science it also publishes, since neither its RSS feed nor its
-# main listing carries a subject anywhere. Health sciences is needed alongside
-# biological sciences because Nature files cancer biology, immunology, and
-# infection under the former; filtering on biology alone drops them.
+# Nature and Nature Communications are multidisciplinary, and roughly half of
+# what they publish is outside this project's scope: condensed-matter physics,
+# astronomy, catalysis, atmospheric science, and machine learning. About 65% of
+# Nature Communications and 48% of Nature is biological or health science.
+#
+# Their subject listings are the only structural way to separate the two, since
+# neither journal's RSS feed nor its main listing carries a subject anywhere.
+# Health sciences is needed alongside biological sciences because Nature files
+# cancer biology, immunology, and infection under the former; filtering on
+# biological sciences alone drops them.
 #
 # All sources share a journal name, so main() unions them and build_feed
 # deduplicates the overlap by link. None declares a fallback: the journal's
 # RSS feed is unfiltered, so falling back to it would silently readmit exactly
 # the content this filter exists to remove.
 #
-# Each page holds 50 articles, roughly three days of this journal's biology
-# output. A rolling listing silently drops whatever scrolls off before the next
-# snapshot, so its depth has to exceed the longest gap between runs: the
-# 20-item listing used previously lost 44 of the 88 articles published over one
-# ten-day stretch. Two pages per subject carry about a week, against a longest
-# observed gap of six days. Consecutive pages do not overlap.
+# A rolling listing silently drops whatever scrolls off before the next
+# snapshot, so its depth has to exceed the longest gap between runs, which is
+# six days: the 20-item listing previously used for Nature Communications lost
+# 44 of the 88 articles published over one ten-day stretch. A page holds 50
+# cards, which is about three days of Nature Communications biology and eight
+# days of Nature's, so two pages leave both with headroom. Consecutive pages do
+# not overlap, and page one is equivalent to the unparameterized URL.
 NATURE_SUBJECT_PAGES: int = 2
+
+NATURE_SUBJECTS: Tuple[str, ...] = ("biological-sciences", "health-sciences")
+
+# (display name, nature.com journal code, DOI prefix identifying the journal).
+NATURE_SUBJECT_JOURNALS: Tuple[Tuple[str, str, str], ...] = (
+    ("Nature Communications", "ncomms", "s41467"),
+    ("Nature", "nature", "s41586"),
+)
 
 NATURE_SUBJECT_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
     JournalConfig(
-        name="Nature Communications",
-        url=f"https://www.nature.com/subjects/{subject}/ncomms?page={page}",
+        name=name,
+        url=f"https://www.nature.com/subjects/{subject}/{code}?page={page}",
         base_url="https://www.nature.com",
         include_terms=(),
         exclude_terms=(),
         parser_key="nature_subject_html",
-        link_pattern=r"nature\.com/articles/s41467-",
+        link_pattern=rf"nature\.com/articles/{doi}-",
     )
-    for subject in ("biological-sciences", "health-sciences")
+    for name, code, doi in NATURE_SUBJECT_JOURNALS
+    for subject in NATURE_SUBJECTS
     for page in range(1, NATURE_SUBJECT_PAGES + 1)
 )
 
@@ -102,17 +115,6 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         include_terms=(),
         exclude_terms=(),
         link_pattern=r"cell\.com/cell/",
-    ),
-    JournalConfig(
-        name="Nature",
-        url="https://www.nature.com/nature.rss",
-        base_url="https://www.nature.com",
-        include_terms=("research article", "research"),
-        exclude_terms=("news & views",),
-        # Nature's news, Comment, Career, and World View content carries a d41586
-        # DOI prefix; only s41586 is a research article. nature.rss exposes no
-        # prism:section or dc:type, so the prefix is the only structural marker.
-        link_pattern=r"nature\.com/articles/s41586-",
     ),
     JournalConfig(
         name="Science",

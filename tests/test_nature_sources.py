@@ -11,8 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from config import (
     JOURNAL_CONFIGS,
     NATURE_ARTICLE_LISTING_CONFIGS,
+    NATURE_SUBJECT_JOURNALS,
     NATURE_SUBJECT_LISTING_CONFIGS,
     NATURE_SUBJECT_PAGES,
+    NATURE_SUBJECTS,
 )
 from main import fetch_and_parse
 from models import Article, JournalConfig
@@ -83,31 +85,52 @@ class NatureSubjectListingTests(unittest.TestCase):
         self.assertEqual([article.title for article in articles], ["Article"])
 
 
-class NatureCommunicationsScopeTests(unittest.TestCase):
-    """Verify Nature Communications is drawn from both biology subject listings."""
+def _subject_and_page(url: str) -> tuple:
+    """Split a subject-listing URL into its subject and page number."""
+    subject = url.split("/subjects/")[1].split("/")[0]
+    return subject, int(url.rsplit("page=", 1)[1])
+
+
+class NatureSubjectScopeTests(unittest.TestCase):
+    """Verify the multidisciplinary journals are drawn from subject listings.
+
+    Nature and Nature Communications both publish roughly half their output
+    outside this project's scope, and neither exposes a subject in any feed.
+    """
+
+    def test_covers_every_configured_journal(self) -> None:
+        """Restrict each multidisciplinary journal, not only the first."""
+        names = {config.name for config in NATURE_SUBJECT_LISTING_CONFIGS}
+        self.assertEqual(names, {name for name, _, _ in NATURE_SUBJECT_JOURNALS})
 
     def test_uses_biological_and_health_sciences(self) -> None:
         """Cover both subjects, since Nature files biomedicine under health."""
-        urls = [config.url for config in NATURE_SUBJECT_LISTING_CONFIGS]
-        self.assertTrue(any("biological-sciences" in url for url in urls))
-        self.assertTrue(any("health-sciences" in url for url in urls))
+        for name, _, _ in NATURE_SUBJECT_JOURNALS:
+            subjects = {
+                _subject_and_page(config.url)[0]
+                for config in NATURE_SUBJECT_LISTING_CONFIGS
+                if config.name == name
+            }
+            with self.subTest(journal=name):
+                self.assertEqual(subjects, set(NATURE_SUBJECTS))
 
     def test_paginates_every_subject_to_the_same_depth(self) -> None:
         """Fetch each subject to NATURE_SUBJECT_PAGES, with no page skipped.
 
         A rolling listing loses whatever scrolls off between snapshots, so its
-        depth has to exceed the longest gap between runs. One page holds about
-        three days of this journal's biology output.
+        depth has to exceed the longest gap between runs.
         """
         pages = collections.defaultdict(set)
         for config in NATURE_SUBJECT_LISTING_CONFIGS:
-            subject, _, page = config.url.rpartition("/ncomms?page=")
-            pages[subject.rsplit("/", 1)[-1]].add(int(page))
+            subject, page = _subject_and_page(config.url)
+            pages[(config.name, subject)].add(page)
 
         expected = set(range(1, NATURE_SUBJECT_PAGES + 1))
-        self.assertEqual(set(pages), {"biological-sciences", "health-sciences"})
-        for subject, seen in pages.items():
-            with self.subTest(subject=subject):
+        self.assertEqual(
+            len(pages), len(NATURE_SUBJECT_JOURNALS) * len(NATURE_SUBJECTS)
+        )
+        for key, seen in pages.items():
+            with self.subTest(source=key):
                 self.assertEqual(seen, expected)
 
     def test_every_source_is_distinct(self) -> None:
@@ -115,28 +138,38 @@ class NatureCommunicationsScopeTests(unittest.TestCase):
         urls = [config.url for config in NATURE_SUBJECT_LISTING_CONFIGS]
         self.assertEqual(len(urls), len(set(urls)))
 
-    def test_sources_share_one_journal_name(self) -> None:
-        """Union both listings under one name so main() merges them."""
-        names = {config.name for config in NATURE_SUBJECT_LISTING_CONFIGS}
-        self.assertEqual(names, {"Nature Communications"})
+    def test_each_journal_keeps_its_own_identity_pattern(self) -> None:
+        """Keep the DOI prefixes distinct so one journal cannot absorb another."""
+        for name, _, doi in NATURE_SUBJECT_JOURNALS:
+            for config in NATURE_SUBJECT_LISTING_CONFIGS:
+                if config.name == name:
+                    with self.subTest(journal=name, url=config.url):
+                        self.assertIn(doi, config.link_pattern)
 
     def test_declares_no_fallback(self) -> None:
         """Keep the unfiltered RSS feed out of a subject-filtered source.
 
-        Falling back to ncomms.rss would readmit the physics and chemistry the
-        subject listings exist to exclude.
+        Falling back to a journal's own RSS feed would readmit the physics and
+        chemistry the subject listings exist to exclude.
         """
         for config in NATURE_SUBJECT_LISTING_CONFIGS:
             with self.subTest(url=config.url):
                 self.assertIsNone(config.fallback_url)
 
-    def test_is_not_also_fetched_as_an_unfiltered_listing(self) -> None:
-        """Ensure the unfiltered ncomms listing was removed, not merely added to."""
-        ncomms = [c for c in JOURNAL_CONFIGS if c.name == "Nature Communications"]
-        self.assertEqual(len(ncomms), len(NATURE_SUBJECT_LISTING_CONFIGS))
-        for config in ncomms:
-            with self.subTest(url=config.url):
-                self.assertIn("/subjects/", config.url)
+    def test_no_unfiltered_source_remains(self) -> None:
+        """Ensure the unfiltered sources were replaced, not merely added to.
+
+        Nature previously came from nature.rss and Nature Communications from
+        the all-subject listing; either surviving would readmit everything.
+        """
+        for name, _, _ in NATURE_SUBJECT_JOURNALS:
+            configs = [c for c in JOURNAL_CONFIGS if c.name == name]
+            with self.subTest(journal=name):
+                self.assertEqual(
+                    len(configs), len(NATURE_SUBJECTS) * NATURE_SUBJECT_PAGES
+                )
+                for config in configs:
+                    self.assertIn("/subjects/", config.url)
 
 
 class NatureSourceTests(unittest.TestCase):
