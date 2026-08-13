@@ -587,19 +587,6 @@ def parse_oup_rss(xml: str, config: JournalConfig) -> List[Article]:
     return _parse_rss2(xml, config, _OUP_SKIP_PREFIXES)
 
 
-def parse_nature_subject_rss(xml: str, config: JournalConfig) -> List[Article]:
-    """Extract articles from a Nature per-subject RSS 2.0 feed.
-
-    Nature's per-journal feeds are capped at eight items, which is under a day of
-    output for Nature Communications. The per-subject feeds hold thirty items each,
-    so several are unioned per journal and deduplicated by link in build_feed.
-
-    These feeds carry no dc:creator, so the creator-count heuristic used for the
-    RDF feeds does not apply, and no description, so items have no abstract.
-    """
-    return _parse_rss2(xml, config, _NATURE_SKIP_PREFIXES)
-
-
 PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "nature_html": parse_nature,
     "nature_article_html": parse_nature_article_listing,
@@ -607,11 +594,9 @@ PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
     "nature_rss": parse_nature_rss,
     "nature_review_rss": parse_nature_review_rss,
     "Cell": parse_cell_rss,
-    "Nature": parse_nature_rss,
     "Science": parse_science_rss,
     "Molecular Cell": parse_cell_rss,
     "Nature Cell Biology": parse_nature_rss,
-    "Nature Communications": parse_nature_subject_rss,
     "Nature Biotechnology": parse_nature_rss,
     "Nature Methods": parse_nature_rss,
     "Genome Biology": parse_genome_biology,
