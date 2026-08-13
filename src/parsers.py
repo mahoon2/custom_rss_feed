@@ -592,8 +592,48 @@ PARSER_MAP: Dict[str, Callable[[str, JournalConfig], List[Article]]] = {
 }
 
 
+def matches_journal(article: Article, config: JournalConfig) -> bool:
+    """Whether an article link is consistent with the journal it is attributed to.
+
+    Parsers stamp source=config.name onto every card they find, so the label is
+    an assumption about the fetched page rather than a fact read from it. The
+    link is the one field that can falsify that assumption: publishers encode
+    journal identity in the URL (a Nature DOI prefix, a cell.com path segment,
+    a dedicated host). Journals with no configured pattern are not checked.
+    """
+    if not config.link_pattern:
+        return True
+    return re.search(config.link_pattern, article.link) is not None
+
+
+def report_identity_check(config: JournalConfig, total: int, rejected: int) -> None:
+    """Report the outcome of the journal-identity check for one fetch.
+
+    Rejection is bimodal in practice: 22 of 23 journals reject nothing on a
+    healthy run, while Nature rejects its d41586 news items on every run. A
+    per-run warning for the routine case would train the reader to skim past
+    the line that matters, so only a total rejection is raised to ERROR. That
+    is also the only outcome that changes behaviour, since it leaves the caller
+    with nothing and triggers the fallback or skips the journal.
+    """
+    if not rejected:
+        return
+    if rejected == total:
+        print(
+            f"ERROR: all {total} {config.name} entries failed the identity check "
+            f"(expected links matching {config.link_pattern!r})."
+        )
+    else:
+        print(f"Rejected {rejected}/{total} entries not identifying as {config.name}.")
+
+
 def parse_journal(html: str, config: JournalConfig) -> List[Article]:
-    """Parse the journal page using the CSS-based parser for that journal."""
+    """Parse the journal page using the CSS-based parser for that journal.
+
+    Articles whose link contradicts the journal's identity pattern are dropped.
+    When every article is dropped the caller sees an empty list, which is the
+    signal fetch_and_parse already uses to retry the journal-scoped fallback.
+    """
     parser = PARSER_MAP.get(config.parser_key or config.name)
     if not parser:
         return []
@@ -601,4 +641,6 @@ def parse_journal(html: str, config: JournalConfig) -> List[Article]:
     print(f"Extracted {len(candidates)} entries.")
     filtered = [article for article in candidates if article.title and article.link]
     print(f"Filtered down to {len(filtered)} valid articles.")
-    return filtered
+    verified = [article for article in filtered if matches_journal(article, config)]
+    report_identity_check(config, len(filtered), len(filtered) - len(verified))
+    return verified

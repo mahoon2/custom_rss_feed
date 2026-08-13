@@ -37,3 +37,11 @@ class JournalConfig:
     parser_key: Optional[str] = None
     fallback_url: Optional[str] = None
     fallback_parser_key: Optional[str] = None
+    link_pattern: Optional[str] = None
+    """Regex an article link must match to be attributed to this journal.
+
+    Publishers encode journal identity in the article URL (a Nature DOI prefix,
+    a cell.com path segment, a dedicated host), so the link is the one field
+    that can falsify the journal label a parser would otherwise assume. None
+    disables the check.
+    """

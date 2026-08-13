@@ -7,13 +7,17 @@ TRUST_HEADERS: Dict[str, str] = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-NATURE_ARTICLE_JOURNALS: Tuple[Tuple[str, str], ...] = (
-    ("Nature Cell Biology", "ncb"),
-    ("Nature Communications", "ncomms"),
-    ("Nature Biotechnology", "nbt"),
-    ("Nature Methods", "nmeth"),
-    ("Nature Genetics", "ng"),
-    ("Nature Structural & Molecular Biology", "nsmb"),
+# (display name, nature.com journal code, DOI prefix identifying the journal).
+# The DOI prefix is what distinguishes one nature.com journal from another: all
+# eight listing scrapers share a host and card markup, so a mis-scoped response
+# is otherwise indistinguishable from a correct one.
+NATURE_ARTICLE_JOURNALS: Tuple[Tuple[str, str, str], ...] = (
+    ("Nature Cell Biology", "ncb", "s41556"),
+    ("Nature Communications", "ncomms", "s41467"),
+    ("Nature Biotechnology", "nbt", "s41587"),
+    ("Nature Methods", "nmeth", "s41592"),
+    ("Nature Genetics", "ng", "s41588"),
+    ("Nature Structural & Molecular Biology", "nsmb", "s41594"),
 )
 
 NATURE_ARTICLE_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
@@ -26,8 +30,9 @@ NATURE_ARTICLE_LISTING_CONFIGS: Tuple[JournalConfig, ...] = tuple(
         parser_key="nature_article_html",
         fallback_url=f"https://www.nature.com/{code}.rss",
         fallback_parser_key="nature_rss",
+        link_pattern=rf"nature\.com/articles/{doi}-",
     )
-    for name, code in NATURE_ARTICLE_JOURNALS
+    for name, code, doi in NATURE_ARTICLE_JOURNALS
 )
 
 NATURE_REVIEW_LISTING_CONFIGS: Tuple[JournalConfig, ...] = (
@@ -40,6 +45,7 @@ NATURE_REVIEW_LISTING_CONFIGS: Tuple[JournalConfig, ...] = (
         parser_key="nature_html",
         fallback_url="https://www.nature.com/nrm.rss",
         fallback_parser_key="nature_review_rss",
+        link_pattern=r"nature\.com/articles/s41580-",
     ),
     JournalConfig(
         name="Nature Reviews Genetics",
@@ -50,6 +56,7 @@ NATURE_REVIEW_LISTING_CONFIGS: Tuple[JournalConfig, ...] = (
         parser_key="nature_html",
         fallback_url="https://www.nature.com/nrg.rss",
         fallback_parser_key="nature_review_rss",
+        link_pattern=r"nature\.com/articles/s41576-",
     ),
 )
 
@@ -60,6 +67,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.cell.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"cell\.com/cell/",
     ),
     JournalConfig(
         name="Nature",
@@ -67,6 +75,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.nature.com",
         include_terms=("research article", "research"),
         exclude_terms=("news & views",),
+        link_pattern=r"nature\.com/articles/[sd]41586-",
     ),
     JournalConfig(
         name="Science",
@@ -74,6 +83,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.science.org",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"science\.org/doi/(abs/)?10\.1126/science\.",
     ),
     JournalConfig(
         name="Molecular Cell",
@@ -81,6 +91,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.cell.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"cell\.com/molecular-cell/",
     ),
     *NATURE_ARTICLE_LISTING_CONFIGS,
     JournalConfig(
@@ -89,6 +100,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://genomebiology.biomedcentral.com",
         include_terms=("research",),
         exclude_terms=(),
+        link_pattern=r"genomebiology\.biomedcentral\.com",
     ),
     JournalConfig(
         name="Genome Research",
@@ -96,6 +108,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://genome.cshlp.org",
         include_terms=("research",),
         exclude_terms=(),
+        link_pattern=r"genome\.cshlp\.org",
     ),
     JournalConfig(
         name="Nucleic Acids Research",
@@ -103,6 +116,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://academic.oup.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"academic\.oup\.com/nar",
     ),
     JournalConfig(
         name="Briefings in Bioinformatics",
@@ -110,6 +124,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://academic.oup.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"academic\.oup\.com/bib",
     ),
     JournalConfig(
         name="Bioinformatics",
@@ -117,6 +132,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://academic.oup.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"academic\.oup\.com/bioinformatics",
     ),
     JournalConfig(
         name="Cell Genomics",
@@ -124,6 +140,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.cell.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"cell\.com/cell-genomics",
     ),
     JournalConfig(
         name="The EMBO Journal",
@@ -131,6 +148,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://link.springer.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"/s44318-",
     ),
     JournalConfig(
         name="Science Advances",
@@ -138,6 +156,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.science.org",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"science\.org/doi/(abs/)?10\.1126/sciadv",
     ),
     JournalConfig(
         name="RNA",
@@ -145,6 +164,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://rnajournal.cshlp.org",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"rnajournal\.cshlp\.org",
     ),
     *NATURE_REVIEW_LISTING_CONFIGS,
     JournalConfig(
@@ -153,6 +173,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.cell.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"cell\.com/trends/genetics",
     ),
     JournalConfig(
         name="Trends in Cell Biology",
@@ -160,6 +181,7 @@ JOURNAL_CONFIGS: Tuple[JournalConfig, ...] = (
         base_url="https://www.cell.com",
         include_terms=(),
         exclude_terms=(),
+        link_pattern=r"cell\.com/trends/cell-biology",
     ),
 )
 
