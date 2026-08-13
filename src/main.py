@@ -46,19 +46,44 @@ def fetch_and_parse(config: JournalConfig) -> List[Article]:
 
 
 def main() -> None:
-    """Generate RSS feed XML files by scraping configured journals."""
+    """Generate RSS feed XML files by scraping configured journals.
+
+    A journal whose primary and fallback sources both fail is skipped rather
+    than aborting the run, so one publisher's outage cannot freeze every feed.
+    A feed that would come out empty is left untouched instead: an empty file
+    would overwrite the last good copy with nothing.
+    """
     articles_by_journal: Dict[str, List[Article]] = {}
+    failed: List[str] = []
     for config in JOURNAL_CONFIGS:
         print(f"Fetching {config.name}...")
-        articles_by_journal.setdefault(config.name, []).extend(fetch_and_parse(config))
+        try:
+            articles = fetch_and_parse(config)
+        except RuntimeError as error:
+            print(f"ERROR: skipping {config.name}: {error}")
+            failed.append(config.name)
+            continue
+        articles_by_journal.setdefault(config.name, []).extend(articles)
 
     for feed_config in FEED_CONFIGS:
-        articles: List[Article] = []
+        articles = []
         for journal_name in feed_config.journal_names:
             articles.extend(articles_by_journal.get(journal_name, []))
+        if not articles:
+            print(
+                f"ERROR: {feed_config.output_file} would be empty; leaving it unchanged."
+            )
+            continue
         feed_content = build_feed(articles, feed_config)
         Path(feed_config.output_file).write_text(feed_content, encoding="utf-8")
-        print(f"Wrote {feed_config.output_file} ({len(articles)} articles).")
+        missing = [n for n in feed_config.journal_names if n in failed]
+        note = f"; missing {', '.join(missing)}" if missing else ""
+        print(f"Wrote {feed_config.output_file} ({len(articles)} articles{note}).")
+
+    if failed:
+        print(
+            f"\nWARNING: {len(failed)} journal(s) skipped this run: {', '.join(failed)}"
+        )
 
 
 if __name__ == "__main__":
