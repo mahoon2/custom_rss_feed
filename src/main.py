@@ -80,13 +80,16 @@ def main() -> None:
             continue
         feed_content = build_feed(articles, feed_config)
         Path(feed_config.output_file).write_text(feed_content, encoding="utf-8")
+        # build_feed drops duplicate links, so count them here rather than
+        # reporting a total the file does not contain.
+        written = len({article.link for article in articles})
         missing = [
             n
             for n in feed_config.journal_names
             if n in failed and not articles_by_journal.get(n)
         ]
         note = f"; missing {', '.join(missing)}" if missing else ""
-        print(f"Wrote {feed_config.output_file} ({len(articles)} articles{note}).")
+        print(f"Wrote {feed_config.output_file} ({written} articles{note}).")
 
     partial = sorted({n for n in failed if articles_by_journal.get(n)})
     dropped = sorted({n for n in failed if not articles_by_journal.get(n)})
